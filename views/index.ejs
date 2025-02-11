@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zMaximus | Testes</title>
+  <!-- Inclusão do Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Status de clä | BETA TESTER </h1>
+    <form action="/" method="post" class="mb-6">
+      <label for="clan_tag" class="block mb-2 text-lg font-medium">
+        Tag do Clã (ex: #PG2V0RGR):
+      </label>
+      <div class="flex">
+        <input
+          type="text"
+          id="clan_tag"
+          name="clan_tag"
+          placeholder="#PG2V0RGR"
+          required
+          class="flex-1 p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+        <button type="submit" class="bg-blue-500 text-white px-4 py-3 rounded-r-md hover:bg-blue-600">
+          Buscar
+        </button>
+      </div>
+    </form>
+    
+    <% if (error) { %>
+      <p class="text-red-500 font-semibold mb-4"><%= error %></p>
+    <% } %>
+    
+    <% if (data) { %>
+      <!-- Card do Clã -->
+      <div class="clan-info bg-white p-6 rounded shadow">
+        <img
+          src="<%= data.badgeUrls.large %>"
+          alt="Banner do Clã"
+          class="w-48 h-48 object-contain mx-auto"
+        >
+        <h2 class="text-2xl font-bold text-center mt-4"><%= data.name %></h2>
+        <p class="text-center mt-2"><%= data.description %></p>
+        <p class="text-center mt-2">Nível: <%= data.clanLevel %></p>
+      </div>
+    <% } %>
+
+    <div class="mt-4 text-center font-bold">
+        Total doado pelo Clã: <%= totalDonations.toLocaleString('pt-BR') %>
+      </div>  
+
+      <% if (members && members.length > 0) { %>
+        <!-- Card de Membros -->
+        <div class="members-info bg-white p-6 rounded shadow mt-6">
+          <h2 class="text-xl font-bold mb-4">Membros do Clã</h2>
+          
+          <!-- Seletor de Ordenação -->
+          <div class="mb-4 flex items-center">
+            <label for="sortOrder" class="font-medium mr-2">Ordenar por doações:</label>
+            <select id="sortOrder" class="p-2 border border-gray-300 rounded">
+              <option value="desc">Maior para Menor</option>
+              <option value="asc">Menor para Maior</option>
+            </select>
+          </div>
+          
+          <!-- Lista de Membros -->
+          <ul class="divide-y divide-gray-200">
+            <% members.forEach(member => { %>
+              <li class="py-2 flex justify-between" data-donation="<%= member.donations %>">
+                <span><%= member.name %></span>
+                <span class="font-semibold">
+                  Doações: <%= Number(member.donations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                </span>
+              </li>
+            <% }); %>
+          </ul>
+          
+          <div class="mt-4 text-center font-bold">
+            Total doado pelo Clã: <%= Number(totalDonations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+          </div>
+        </div>
+        
+        <!-- Script para ordenar os membros -->
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const sortOrderSelect = document.getElementById('sortOrder');
+            const membersList = document.querySelector('.members-info ul');
+            
+            sortOrderSelect.addEventListener('change', function() {
+              const order = sortOrderSelect.value; // 'desc' ou 'asc'
+              
+              // Converte os elementos <li> em um array
+              const itemsArray = Array.from(membersList.querySelectorAll('li'));
+              
+              // Ordena o array com base no atributo "data-donation"
+              itemsArray.sort((a, b) => {
+                const donationA = parseFloat(a.getAttribute('data-donation')) || 0;
+                const donationB = parseFloat(b.getAttribute('data-donation')) || 0;
+                
+                return order === 'desc' ? donationB - donationA : donationA - donationB;
+              });
+              
+              // Limpa a lista e reanexa os itens ordenados
+              membersList.innerHTML = '';
+              itemsArray.forEach(item => membersList.appendChild(item));
+            });
+          });
+        </script>
+      <% } %>
+  </div>
+</body>
+</html>
