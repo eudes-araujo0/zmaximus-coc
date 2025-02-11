@@ -3,112 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>zMaximus | Testes</title>
-  <!-- Inclusão do Tailwind CSS via CDN -->
+  <title>Consulta de Clã - Clash of Clans</title>
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Você pode trocar a URL abaixo por uma imagem que remeta ao Clash of Clans */
+    body {
+      background: url('https://wallpapercave.com/wp/wp2757875.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-  <div class="max-w-3xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-6">Status de clä | BETA TESTER </h1>
-    <form action="/" method="post" class="mb-6">
-      <label for="clan_tag" class="block mb-2 text-lg font-medium">
-        Tag do Clã (ex: #PG2V0RGR):
-      </label>
-      <div class="flex">
-        <input
-          type="text"
-          id="clan_tag"
-          name="clan_tag"
-          placeholder="#PG2V0RGR"
-          required
-          class="flex-1 p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-        <button type="submit" class="bg-blue-500 text-white px-4 py-3 rounded-r-md hover:bg-blue-600">
-          Buscar
-        </button>
-      </div>
-    </form>
+<body class="bg-gray-900 bg-opacity-90 text-gray-100">
+  <div class="max-w-4xl mx-auto p-6">
     
-    <% if (error) { %>
-      <p class="text-red-500 font-semibold mb-4"><%= error %></p>
-    <% } %>
-    
-    <% if (data) { %>
+    <div class="bg-gray-800 bg-opacity-95 p-8 rounded-lg shadow-lg">
+      <!-- Cabeçalho -->
+      <h1 class="text-4xl font-extrabold text-center mb-8 border-b pb-4">
+        Consulta de Clã - Clash of Clans
+      </h1>
+
+      <!-- Formulário de busca -->
+      <form action="/" method="post" class="mb-8">
+        <label for="clan_tag" class="block mb-2 text-xl font-medium">
+          Tag do Clã (ex: #PG2V0RGR):
+        </label>
+        <div class="flex">
+          <input
+            type="text"
+            id="clan_tag"
+            name="clan_tag"
+            placeholder="#PG2V0RGR"
+            required
+            class="flex-1 p-4 border border-gray-600 rounded-l-lg bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+          >
+          <button type="submit" class="bg-yellow-600 text-gray-900 px-6 py-4 rounded-r-lg hover:bg-yellow-500 transition-colors duration-300">
+            Buscar
+          </button>
+        </div>
+      </form>
+
+      <!-- Mensagem de erro -->
+      <% if (error) { %>
+        <p class="text-red-500 font-semibold mb-6"><%= error %></p>
+      <% } %>
+
       <!-- Card do Clã -->
-      <div class="clan-info bg-white p-6 rounded shadow">
-        <img
-          src="<%= data.badgeUrls.large %>"
-          alt="Banner do Clã"
-          class="w-48 h-48 object-contain mx-auto"
-        >
-        <h2 class="text-2xl font-bold text-center mt-4"><%= data.name %></h2>
-        <p class="text-center mt-2"><%= data.description %></p>
-        <p class="text-center mt-2">Nível: <%= data.clanLevel %></p>
-      </div>
-    <% } %>
-
-    <div class="mt-4 text-center font-bold">
-        Total doado pelo Clã: <%= totalDonations.toLocaleString('pt-BR') %>
-      </div>  
-
-      <% if (members && members.length > 0) { %>
-        <!-- Card de Membros -->
-        <div class="members-info bg-white p-6 rounded shadow mt-6">
-          <h2 class="text-xl font-bold mb-4">Membros do Clã</h2>
-          
-          <!-- Seletor de Ordenação -->
-          <div class="mb-4 flex items-center">
-            <label for="sortOrder" class="font-medium mr-2">Ordenar por doações:</label>
-            <select id="sortOrder" class="p-2 border border-gray-300 rounded">
-              <option value="desc">Maior para Menor</option>
-              <option value="asc">Menor para Maior</option>
-            </select>
+      <% if (data) { %>
+        <div class="clan-info bg-gray-700 p-6 rounded-lg shadow-md mb-8">
+          <div class="flex flex-col md:flex-row items-center">
+            <img
+              src="<%= data.badgeUrls.large %>"
+              alt="Banner do Clã"
+              class="w-32 h-32 md:w-48 md:h-48 object-contain mx-auto"
+            >
+            <div class="mt-4 md:mt-0 md:ml-8 text-center md:text-left">
+              <h2 class="text-3xl font-bold"><%= data.name %></h2>
+              <p class="mt-2 text-gray-300"><%= data.description %></p>
+              <p class="mt-2">Nível: <span class="font-semibold"><%= data.clanLevel %></span></p>
+            </div>
           </div>
-          
-          <!-- Lista de Membros -->
-          <ul class="divide-y divide-gray-200">
+        </div>
+      <% } %>
+
+      <!-- Card de Membros -->
+      <% if (members && members.length > 0) { %>
+        <div class="members-info bg-gray-700 p-6 rounded-lg shadow-md">
+            <div class="mt-4 text-center text-lg font-bold">
+                Total doado pelo Clã: <%= Number(totalDonations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+              </div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Membros do Clã</h2>
+            <!-- Seletor de Ordenação -->
+            <div class="flex items-center">
+              <label for="sortOrder" class="mr-2">Ordenar:</label>
+              <select id="sortOrder" class="p-2 border border-gray-600 rounded bg-gray-800">
+                <option value="desc">Maior para Menor</option>
+                <option value="asc">Menor para Maior</option>
+              </select>
+            </div>
+          </div>
+          <ul class="divide-y divide-gray-600">
             <% members.forEach(member => { %>
-              <li class="py-2 flex justify-between" data-donation="<%= member.donations %>">
-                <span><%= member.name %></span>
+              <li class="py-3 flex justify-between" data-donation="<%= member.donations %>">
+                <span class="font-medium"><%= member.name %></span>
                 <span class="font-semibold">
                   Doações: <%= Number(member.donations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
                 </span>
               </li>
             <% }); %>
           </ul>
-          
-          <div class="mt-4 text-center font-bold">
-            Total doado pelo Clã: <%= Number(totalDonations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
-          </div>
+
         </div>
-        
-        <!-- Script para ordenar os membros -->
-        <script>
-          document.addEventListener('DOMContentLoaded', function() {
-            const sortOrderSelect = document.getElementById('sortOrder');
-            const membersList = document.querySelector('.members-info ul');
-            
-            sortOrderSelect.addEventListener('change', function() {
-              const order = sortOrderSelect.value; // 'desc' ou 'asc'
-              
-              // Converte os elementos <li> em um array
-              const itemsArray = Array.from(membersList.querySelectorAll('li'));
-              
-              // Ordena o array com base no atributo "data-donation"
-              itemsArray.sort((a, b) => {
-                const donationA = parseFloat(a.getAttribute('data-donation')) || 0;
-                const donationB = parseFloat(b.getAttribute('data-donation')) || 0;
-                
-                return order === 'desc' ? donationB - donationA : donationA - donationB;
-              });
-              
-              // Limpa a lista e reanexa os itens ordenados
-              membersList.innerHTML = '';
-              itemsArray.forEach(item => membersList.appendChild(item));
-            });
-          });
-        </script>
       <% } %>
+    </div>
   </div>
+
+  <!-- Script para ordenar os membros -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortOrderSelect = document.getElementById('sortOrder');
+      const membersList = document.querySelector('.members-info ul');
+
+      sortOrderSelect.addEventListener('change', function() {
+        const order = sortOrderSelect.value; // 'desc' ou 'asc'
+        const itemsArray = Array.from(membersList.querySelectorAll('li'));
+
+        itemsArray.sort((a, b) => {
+          const donationA = parseFloat(a.getAttribute('data-donation')) || 0;
+          const donationB = parseFloat(b.getAttribute('data-donation')) || 0;
+          return order === 'desc' ? donationB - donationA : donationA - donationB;
+        });
+
+        membersList.innerHTML = '';
+        itemsArray.forEach(item => membersList.appendChild(item));
+      });
+    });
+  </script>
 </body>
 </html>
