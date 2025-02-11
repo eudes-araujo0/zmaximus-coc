@@ -7,7 +7,7 @@
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Você pode trocar a URL abaixo por uma imagem que remeta ao Clash of Clans */
+    /* Background customizado – substitua a URL conforme sua preferência */
     body {
       background: url('https://wallpapercave.com/wp/wp2757875.jpg') no-repeat center center fixed;
       background-size: cover;
@@ -16,17 +16,17 @@
 </head>
 <body class="bg-gray-900 bg-opacity-90 text-gray-100">
   <div class="max-w-4xl mx-auto p-6">
-    
     <div class="bg-gray-800 bg-opacity-95 p-8 rounded-lg shadow-lg">
       <!-- Cabeçalho -->
       <h1 class="text-4xl font-extrabold text-center mb-8 border-b pb-4">
-        Consulta de Clã - Clash of Clans
+        Consulta de Clã (BETA) - Clash of Clans
+        <h6 class="text-center mb-2">Desenvolvido por: © Eudes Júnior</h6>
       </h1>
 
-      <!-- Formulário de busca -->
+      <!-- Formulário de Busca -->
       <form action="/" method="post" class="mb-8">
         <label for="clan_tag" class="block mb-2 text-xl font-medium">
-          Tag do Clã (ex: #PG2V0RGR):
+          Tag do Clã (ex: PG2V0RGR):
         </label>
         <div class="flex">
           <input
@@ -43,7 +43,7 @@
         </div>
       </form>
 
-      <!-- Mensagem de erro -->
+      <!-- Mensagem de Erro -->
       <% if (error) { %>
         <p class="text-red-500 font-semibold mb-6"><%= error %></p>
       <% } %>
@@ -66,15 +66,62 @@
         </div>
       <% } %>
 
-      <!-- Card de Membros -->
-      <% if (members && members.length > 0) { %>
+      <!-- Card de Membros e Resumo de Doações -->
+      <% if (members && members.length > 0) {
+            // Inicializa variáveis para os cálculos
+            let maxDonation = 0;
+            let minDonation = Infinity;
+            let sumDonation = 0;
+            let sumDonationSinceReset = 0;
+            let biggestDonorName = "";
+            
+            members.forEach(member => {
+              // "donations" representa a quantidade total de tropas doadas na temporada atual
+              const donationValue = Number(member.donations) || 0;
+              // "donationsSinceLastReset" representa as tropas doadas desde o último reset de temporada
+              const donationSinceReset = Number(member.donationsSinceLastReset) || 0;
+              
+              sumDonation += donationValue;
+              sumDonationSinceReset += donationSinceReset;
+              
+              if (donationValue > maxDonation) {
+                maxDonation = donationValue;
+                biggestDonorName = member.name;
+              }
+              
+              if (donationValue < minDonation) {
+                minDonation = donationValue;
+              }
+            });
+            let avgDonation = sumDonation / members.length;
+      %>
         <div class="members-info bg-gray-700 p-6 rounded-lg shadow-md">
-            <div class="mt-4 text-center text-lg font-bold">
-                Total doado pelo Clã: <%= Number(totalDonations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
-              </div>
+          <!-- Card Resumo de Doações (destacado) -->
+          <div class="summary-card bg-yellow-600 text-gray-900 p-6 rounded-lg shadow-lg mb-6">
+            <h3 class="text-2xl font-bold mb-4 text-center">Resumo de Doações</h3>
+            <ul class="list-disc list-inside">
+              <li>
+                <span class="font-semibold">Total doado pelo Clã:</span>
+                <%= Number(sumDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
+              </li>
+              <li>
+                <span class="font-semibold">Maior doador:</span>
+                <%= biggestDonorName %> (<%= Number(maxDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>)
+              </li>
+              <li>
+                <span class="font-semibold">Média de doações:</span>
+                <%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
+              </li>
+              <li>
+                <span class="font-semibold">Tropas doadas desde o último reset de temporada:</span>
+                <%= Number(sumDonationSinceReset).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Título e Seletor de Ordenação dos Membros -->
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Membros do Clã</h2>
-            <!-- Seletor de Ordenação -->
             <div class="flex items-center">
               <label for="sortOrder" class="mr-2">Ordenar:</label>
               <select id="sortOrder" class="p-2 border border-gray-600 rounded bg-gray-800">
@@ -83,23 +130,28 @@
               </select>
             </div>
           </div>
+          <!-- Lista de Membros -->
           <ul class="divide-y divide-gray-600">
             <% members.forEach(member => { %>
               <li class="py-3 flex justify-between" data-donation="<%= member.donations %>">
-                <span class="font-medium"><%= member.name %></span>
+                <span class="font-medium">
+                  <% if (member.league) { %>
+                    <img src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" alt="<%= member.league.name %>" class="inline-block w-6 h-6 mr-2 align-middle">
+                  <% } %>
+                  <%= member.name %>
+                </span>
                 <span class="font-semibold">
-                  Doações: <%= Number(member.donations).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                  Doações: <%= Number(member.donations).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
                 </span>
               </li>
             <% }); %>
           </ul>
-
         </div>
       <% } %>
     </div>
   </div>
 
-  <!-- Script para ordenar os membros -->
+  <!-- Script para Ordenação dos Membros -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const sortOrderSelect = document.getElementById('sortOrder');
@@ -122,3 +174,5 @@
   </script>
 </body>
 </html>
+
+
