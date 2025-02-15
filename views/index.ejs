@@ -212,14 +212,15 @@
                       <img
                         src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>"
                         alt="<%= member.league.name %>"
-                        class="inline-block w-8 h-8 mr-1 align-middle"
+                        class="inline-block w-8 h-8 mr-1 align-middle "
                       >
                     <% } %>
                     <%= member.name %>
                   </span>
 
-                  <span class="text-yellow-400 font-bold top-doador-tag hidden mt-1 md:mt-0 md:ml-2">
-                    🏆 TOP DOADOR
+                  <span class="text-yellow-400 font-bold top-doador-tag hidden mt-0 md:mt-0 md:ml-2">
+                    <span class="block md:hidden">🏆 TOP</span>
+                    <span class="hidden md:block">🏆 TOP DOADOR</span>
                   </span>
                 </div>
                 

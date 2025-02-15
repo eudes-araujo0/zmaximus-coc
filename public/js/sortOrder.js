@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Recoloca cada <li> e exibe/esconde a tag "TOP DOADOR"
     itemsArray.forEach(item => {
-      // Pega a tag .top-doador-tag dentro do <li>
+      // Pega a tag .top-doador-tag
       const topDoadorSpan = item.querySelector(".top-doador-tag");
       if (topDoadorSpan) {
         // Esconde por padrão
@@ -48,11 +48,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Reanexa o <li> ordenado
       membersList.appendChild(item);
     });
   }
 
-  // Ordena ao trocar select e na primeira carga
+  // Ordena ao trocar o select e na primeira carga
   sortOrder.addEventListener("change", sortMembers);
   sortMembers();
 });
