@@ -22,18 +22,24 @@ document.addEventListener("DOMContentLoaded", () => {
   
       membersList.innerHTML = "";
   
-      itemsArray.forEach((item, index) => {
+      // Obtém o maior número de doações atual (ignora se for 0)
+      const maiorDoacao = itemsArray.length > 0 
+        ? Math.max(...itemsArray.map(item => Number(item.getAttribute("data-donation")))) 
+        : 0;
+  
+      itemsArray.forEach(item => {
         let nameElement = item.querySelector("span.font-medium");
   
         if (nameElement) {
-          // Remove apenas a tag "TOP DOADOR", preservando o conteúdo original
           let topDoadorSpan = nameElement.querySelector(".top-doador-tag");
           if (topDoadorSpan) {
             topDoadorSpan.remove();
           }
   
-          // Adiciona a tag apenas ao primeiro colocado, mantendo a estrutura original
-          if (index === 0) {
+          const doacoesAtuais = Number(item.getAttribute("data-donation"));
+  
+          // Adiciona a tag somente ao jogador que tem o maior número de doações
+          if (doacoesAtuais === maiorDoacao && maiorDoacao > 0) {
             let tagSpan = document.createElement("span");
             tagSpan.classList.add("text-yellow-400", "font-bold", "top-doador-tag");
             tagSpan.innerHTML = " 🏆 TOP DOADOR";
