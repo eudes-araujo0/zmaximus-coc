@@ -6,6 +6,7 @@
   <title>Consulta de Clã - Clash of Clans</title>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
   <style>
     /* Background customizado – substitua a URL conforme sua preferência */
     body {
@@ -23,7 +24,7 @@
         <h6 class="text-center mb-2">Desenvolvido por: © Eudes Júnior</h6>
       </h1>
 
-      <!-- Formulário de Busca -->
+      <!-- Formulário de Busca pelo Clã -->
       <form action="/" method="post" class="mb-8">
         <label for="clan_tag" class="block mb-2 text-xl font-medium">
           Tag do Clã (ex: PG2V0RGR):
@@ -66,29 +67,47 @@
         </div>
       <% } %>
 
+      <div class="text-center mb-6">
+        <div class="relative inline-block">
+          <!-- Container com efeito de escudo -->
+          <div class="relative">
+            <!-- Contador com fundo laranja e animação de impacto -->
+            <p id="countdown" class="text-4xl font-extrabold text-white mt-2 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 p-6 rounded-lg shadow-xl transform transition-all duration-500 ease-in-out hover:scale-110 hover:shadow-2xl">
+              <!-- O contador vai ser exibido aqui -->
+            </p>
+            <!-- Efeito de reflexo (shine) que simula o brilho de um escudo -->
+            <div class="absolute inset-0 rounded-lg pointer-events-none opacity-0 transition-opacity duration-500 ease-in-out hover:opacity-100">
+              <div class="absolute -top-10 left-0 w-2/3 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform rotate-12"></div>
+            </div>
+          </div>
+        </div>
+        
+        <h3 class="text-lg font-semibold mt-2 text-gray-200">Contagem para o fim da temporada!</h3>
+      </div>
+      
+      
+      </div>
+      
+      
+      
+
       <!-- Card de Membros e Resumo de Doações -->
-      <% if (members && members.length > 0) {
-            // Inicializa variáveis para os cálculos
+      <% if (members && members.length > 0) { 
+            // Cálculos para o resumo de doações
             let maxDonation = 0;
             let minDonation = Infinity;
             let sumDonation = 0;
             let sumDonationSinceReset = 0;
             let biggestDonorName = "";
-            
             members.forEach(member => {
-              // "donations" representa a quantidade total de tropas doadas na temporada atual
               const donationValue = Number(member.donations) || 0;
-              // "donationsSinceLastReset" representa as tropas doadas desde o último reset de temporada
               const donationSinceReset = Number(member.donationsSinceLastReset) || 0;
-              
               sumDonation += donationValue;
               sumDonationSinceReset += donationSinceReset;
-              
               if (donationValue > maxDonation) {
                 maxDonation = donationValue;
                 biggestDonorName = member.name;
               }
-              
               if (donationValue < minDonation) {
                 minDonation = donationValue;
               }
@@ -96,9 +115,9 @@
             let avgDonation = sumDonation / members.length;
       %>
         <div class="members-info bg-gray-700 p-6 rounded-lg shadow-md">
-          <!-- Card Resumo de Doações (destacado) -->
-          <div class="summary-card bg-yellow-600 text-gray-900 p-6 rounded-lg shadow-lg mb-6">
-            <h3 class="text-2xl font-bold mb-4 text-center">Resumo de Doações</h3>
+          <!-- Card Resumo de Doações -->
+          <div class="summary-card bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 text-gray-900 p-6 rounded-lg shadow-lg mb-6">
+            <h3 class="text-2xl font-bold mb-4 text-center uppercase text-white">Resumo de Doações</h3>
             <ul class="list-disc list-inside">
               <li>
                 <span class="font-semibold">Total doado pelo Clã:</span>
@@ -119,7 +138,7 @@
             </ul>
           </div>
 
-          <!-- Título e Seletor de Ordenação dos Membros -->
+          <!-- Título e Ordenação dos Membros -->
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Membros do Clã</h2>
             <div class="flex items-center">
@@ -130,10 +149,23 @@
               </select>
             </div>
           </div>
+
+          <!-- Campo de busca para jogadores, centralizado -->
+          <div class="text-center mb-4">
+            <input
+              type="text"
+              id="playerSearch"
+              placeholder="Buscar jogador pelo nick"
+              class="mx-auto p-4 border border-gray-600 rounded transition-all duration-500 bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+          </div>
+          <!-- Container para mensagem de "Jogador não encontrado!" -->
+          <div id="suggestions" class="text-center text-lg font-medium mb-2"></div>
+
           <!-- Lista de Membros -->
           <ul class="divide-y divide-gray-600">
             <% members.forEach(member => { %>
-              <li class="py-3 flex justify-between" data-donation="<%= member.donations %>">
+              <li class="py-3 flex justify-between" data-donation="<%= member.donations %>" data-name="<%= member.name.toLowerCase() %>">
                 <span class="font-medium">
                   <% if (member.league) { %>
                     <img src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" alt="<%= member.league.name %>" class="inline-block w-6 h-6 mr-2 align-middle">
@@ -151,28 +183,67 @@
     </div>
   </div>
 
-  <!-- Script para Ordenação dos Membros -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const sortOrderSelect = document.getElementById('sortOrder');
-      const membersList = document.querySelector('.members-info ul');
+<script>
+  // Pegando a variável de tempo da temporada
+  const seasonEnd = <%= seasonEnd %>; // Passando diretamente o valor para o JavaScript
 
-      sortOrderSelect.addEventListener('change', function() {
-        const order = sortOrderSelect.value; // 'desc' ou 'asc'
-        const itemsArray = Array.from(membersList.querySelectorAll('li'));
+  function updateCountdown() {
+    const now = Date.now();
+    const remainingTime = seasonEnd - now; // Calculando o tempo restante
 
-        itemsArray.sort((a, b) => {
-          const donationA = parseFloat(a.getAttribute('data-donation')) || 0;
-          const donationB = parseFloat(b.getAttribute('data-donation')) || 0;
-          return order === 'desc' ? donationB - donationA : donationA - donationB;
-        });
+    if (remainingTime <= 0) {
+      document.getElementById("countdown").textContent = "Temporada finalizada!";
+    } else {
+      // Calcular dias, horas, minutos e segundos restantes
+      const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
 
-        membersList.innerHTML = '';
-        itemsArray.forEach(item => membersList.appendChild(item));
+      // Atualizar o contador na tela
+      document.getElementById("countdown").textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+  }
+
+  // Atualizar o contador de forma dinâmica a cada segundo
+  setInterval(updateCountdown, 1000);
+
+  // Atualizar a primeira vez quando a página carregar
+  updateCountdown();
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var sortOrder = document.getElementById('sortOrder');
+    var membersList = document.getElementById('membersList');
+  
+    // Função que ordena os itens com base no valor de data-donation
+    function sortMembers() {
+      var order = sortOrder.value; // 'desc' ou 'asc'
+      // Obtém todos os <li> como array
+      var items = Array.from(membersList.querySelectorAll('li'));
+  
+      items.sort(function(a, b) {
+        var donationA = parseFloat(a.getAttribute('data-donation')) || 0;
+        var donationB = parseFloat(b.getAttribute('data-donation')) || 0;
+        return order === 'desc' ? donationB - donationA : donationA - donationB;
       });
-    });
+  
+      // Limpa o <ul> e reanexa os itens na ordem correta
+      membersList.innerHTML = '';
+      items.forEach(function(item) {
+        membersList.appendChild(item);
+      });
+    }
+  
+    // Chama a ordenação quando a página carrega
+    sortMembers();
+  
+    // Chama a ordenação sempre que o select for alterado
+    sortOrder.addEventListener('change', sortMembers);
+  });
   </script>
-</body>
+  
+
+  <script src="/js/main.js"></script>
 </html>
-
-

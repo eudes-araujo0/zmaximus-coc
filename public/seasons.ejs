@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histórico de Temporadas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <div class="max-w-4xl mx-auto p-6">
+    <h1 class="text-4xl font-extrabold text-center mb-8">Histórico de Temporadas</h1>
+    <% if (pastSeasons.length === 0) { %>
+      <p class="text-center">Nenhuma season encerrada até o momento.</p>
+    <% } else { %>
+      <% pastSeasons.forEach(season => { %>
+        <div class="bg-gray-800 p-4 rounded-lg mb-6">
+          <h2 class="text-2xl font-bold mb-2">Temporada <%= season.seasonName %></h2>
+          <ul class="list-disc list-inside">
+            <li><strong>Total doado:</strong> <%= Number(season.totalDonations).toLocaleString('pt-BR') %></li>
+            <li><strong>Média semanal:</strong> <%= Number(season.weeklyAvg).toLocaleString('pt-BR') %></li>
+            <li><strong>Top 3 Doadores:</strong>
+              <ol class="list-decimal list-inside">
+                <% season.topDonors.forEach((donor, index) => { %>
+                  <li><%= donor.name %> (<%= Number(donor.donations).toLocaleString('pt-BR') %>)</li>
+                <% }); %>
+              </ol>
+            </li>
+          </ul>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+</body>
+</html>
