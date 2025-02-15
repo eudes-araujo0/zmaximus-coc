@@ -13,6 +13,28 @@
       background: url('https://wallpapercave.com/wp/wp2757875.jpg') no-repeat center center fixed;
       background-size: cover;
     }
+    /* Exemplo de classe para estilizar o container do level */
+    .level-badge {
+      position: relative;
+      width: 40px;   /* Ajuste conforme necessário */
+      height: 40px;  /* Ajuste conforme necessário */
+    }
+    .level-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .level-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px; /* Ajuste conforme necessário */
+      pointer-events: none; /* Para não interferir em cliques */
+      text-shadow: 0 0 2px rgba(0,0,0,0.8); /* Destaque do texto */
+    }
   </style>
 </head>
 <body class="bg-gray-900 bg-opacity-90 text-gray-100">
@@ -29,16 +51,16 @@
         <label for="clan_tag" class="block mb-2 text-xl font-medium">
           Tag do Clã (ex: PG2V0RGR):
         </label>
-        <div class="flex">
+        <div class="flex flex-col md:flex-row">
           <input
             type="text"
             id="clan_tag"
             name="clan_tag"
             placeholder="PG2V0RGR"
             required
-            class="flex-1 p-4 border border-gray-600 rounded-l-lg bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            class="flex-1 p-4 border border-gray-600 rounded-t-lg md:rounded-l-lg md:rounded-tr-none bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
           >
-          <button type="submit" class="bg-yellow-600 text-gray-900 px-6 py-4 rounded-r-lg hover:bg-yellow-500 transition-colors duration-300">
+          <button type="submit" class="bg-yellow-600 text-gray-900 px-6 py-4 rounded-b-lg md:rounded-r-lg md:rounded-bl-none hover:bg-yellow-500 transition-colors duration-300">
             Buscar
           </button>
         </div>
@@ -133,9 +155,9 @@
           </div>
 
           <!-- Título e Ordenação dos Membros -->
-          <div class="flex justify-between items-center mb-4">
+          <div class="flex flex-col md:flex-row justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Membros do Clã</h2>
-            <div class="flex items-center">
+            <div class="flex items-center mt-2 md:mt-0">
               <label for="sortOrder" class="mr-2">Ordenar:</label>
               <select id="sortOrder" class="p-2 border border-gray-600 rounded bg-gray-800">
                 <option value="desc">Maior para Menor</option>
@@ -158,14 +180,34 @@
 
           <!-- Lista de Membros -->
           <ul id="membersList" class="divide-y divide-gray-600">
-            <% members.forEach(member => { %>
-              <li class="py-3 flex justify-between" data-donation="<%= member.donations %>" data-name="<%= member.name.toLowerCase() %>">
-                <span class="font-medium">
-                  <% if (member.league) { %>
-                    <img src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" alt="<%= member.league.name %>" class="inline-block w-6 h-6 mr-2 align-middle">
-                  <% } %>
-                  <%= member.name %>
-                </span>
+            <% members.forEach(member => {
+               let isTopDonor = (member.name === biggestDonorName);
+            %>
+              <li class="py-3 flex justify-between items-center" 
+                  data-donation="<%= member.donations %>" 
+                  data-name="<%= member.name.toLowerCase() %>">
+                <!-- Ícone de nível antes do nome do jogador -->
+                <div class="inline-flex items-center">
+                  <!-- Container do ícone + texto do nível -->
+                  <span class="level-badge mr-2">
+                    <!-- Substitua /images/star-badge.png pela sua imagem do “badge” -->
+                    <img src="/images/star-badge.png" alt="Nível">
+                    <span class="level-text"><%= member.expLevel %></span>
+                  </span>
+
+                  <!-- Nome do jogador + destaque se for TOP DOADOR -->
+                  <span class="font-medium">
+                    <% if (member.league) { %>
+                      <img 
+                        src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" 
+                        alt="<%= member.league.name %>" 
+                        class="inline-block w-8 h-8 mr-2 align-middle"
+                      >
+                    <% } %>
+                    <%= member.name %>
+                  </span>
+                </div>
+                
                 <span class="font-semibold">
                   Doações: <%= Number(member.donations).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
                 </span>
@@ -177,35 +219,36 @@
     </div>
   </div>
 
-<script>
-  // Pegando a variável de tempo da temporada
-  const seasonEnd = <%= seasonEnd %>; // Passando diretamente o valor para o JavaScript
+  <script>
+    // Pegando a variável de tempo da temporada
+    const seasonEnd = <%= seasonEnd %>; // Passando diretamente o valor para o JavaScript
 
-  function updateCountdown() {
-    const now = Date.now();
-    const remainingTime = seasonEnd - now; // Calculando o tempo restante
+    function updateCountdown() {
+      const now = Date.now();
+      const remainingTime = seasonEnd - now; // Calculando o tempo restante
 
-    if (remainingTime <= 0) {
-      document.getElementById("countdown").textContent = "Temporada finalizada!";
-    } else {
-      // Calcular dias, horas, minutos e segundos restantes
-      const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+      if (remainingTime <= 0) {
+        document.getElementById("countdown").textContent = "Temporada finalizada!";
+      } else {
+        // Calcular dias, horas, minutos e segundos restantes
+        const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
 
-      // Atualizar o contador na tela
-      document.getElementById("countdown").textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        // Atualizar o contador na tela
+        document.getElementById("countdown").textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      }
     }
-  }
 
-  // Atualizar o contador de forma dinâmica a cada segundo
-  setInterval(updateCountdown, 1000);
+    // Atualizar o contador de forma dinâmica a cada segundo
+    setInterval(updateCountdown, 1000);
 
-  // Atualizar a primeira vez quando a página carregar
-  updateCountdown();
-</script>
+    // Atualizar a primeira vez quando a página carregar
+    updateCountdown();
+  </script>
 
   <script src="/js/main.js"></script>
   <script src="/js/sortOrder.js"></script>
+</body>
 </html>
