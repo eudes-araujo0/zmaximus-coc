@@ -157,7 +157,7 @@
           <div id="suggestions" class="text-center text-lg font-medium mb-2"></div>
 
           <!-- Lista de Membros -->
-          <ul class="divide-y divide-gray-600">
+          <ul id="membersList" class="divide-y divide-gray-600">
             <% members.forEach(member => { %>
               <li class="py-3 flex justify-between" data-donation="<%= member.donations %>" data-name="<%= member.name.toLowerCase() %>">
                 <span class="font-medium">
@@ -207,4 +207,5 @@
 </script>
 
   <script src="/js/main.js"></script>
+  <script src="/js/sortOrder.js"></script>
 </html>
