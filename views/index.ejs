@@ -16,7 +16,7 @@
   </style>
 </head>
 <body class="bg-gray-900 bg-opacity-90 text-gray-100">
-  <div class="max-w-4xl mx-auto p-6">
+  <div class="max-w-4xl mx-auto p-2">
     <div class="bg-gray-800 bg-opacity-95 p-8 rounded-lg shadow-lg">
       <!-- Cabeçalho -->
       <h1 class="text-4xl font-extrabold text-center mb-8 border-b pb-4">
@@ -72,7 +72,7 @@
           <!-- Container com efeito de escudo -->
           <div class="relative">
             <!-- Contador com fundo laranja e animação de impacto -->
-            <p id="countdown" class="text-4xl font-extrabold text-white mt-2 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 p-6 rounded-lg shadow-xl transform transition-all duration-500 ease-in-out hover:scale-110 hover:shadow-2xl">
+            <p id="countdown" class="text-2xl font-extrabold text-white mt-2 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 p-6 rounded-lg shadow-xl transform transition-all duration-500 ease-in-out hover:scale-110 hover:shadow-2xl">
               <!-- O contador vai ser exibido aqui -->
             </p>
             <!-- Efeito de reflexo (shine) que simula o brilho de um escudo -->
@@ -82,15 +82,9 @@
           </div>
         </div>
         
-        <h3 class="text-lg font-semibold mt-2 text-gray-200">Contagem para o fim da temporada!</h3>
+        <h3 class="text-xl font-semibold mt-2 text-gray-200">Contagem para o fim da temporada!</h3>
       </div>
       
-      
-      </div>
-      
-      
-      
-
       <!-- Card de Membros e Resumo de Doações -->
       <% if (members && members.length > 0) { 
             // Cálculos para o resumo de doações
@@ -211,39 +205,6 @@
   // Atualizar a primeira vez quando a página carregar
   updateCountdown();
 </script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var sortOrder = document.getElementById('sortOrder');
-    var membersList = document.getElementById('membersList');
-  
-    // Função que ordena os itens com base no valor de data-donation
-    function sortMembers() {
-      var order = sortOrder.value; // 'desc' ou 'asc'
-      // Obtém todos os <li> como array
-      var items = Array.from(membersList.querySelectorAll('li'));
-  
-      items.sort(function(a, b) {
-        var donationA = parseFloat(a.getAttribute('data-donation')) || 0;
-        var donationB = parseFloat(b.getAttribute('data-donation')) || 0;
-        return order === 'desc' ? donationB - donationA : donationA - donationB;
-      });
-  
-      // Limpa o <ul> e reanexa os itens na ordem correta
-      membersList.innerHTML = '';
-      items.forEach(function(item) {
-        membersList.appendChild(item);
-      });
-    }
-  
-    // Chama a ordenação quando a página carrega
-    sortMembers();
-  
-    // Chama a ordenação sempre que o select for alterado
-    sortOrder.addEventListener('change', sortMembers);
-  });
-  </script>
-  
 
   <script src="/js/main.js"></script>
 </html>
