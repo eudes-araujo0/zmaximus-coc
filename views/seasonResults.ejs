@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Resultados da Season</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <!-- Header com navegação e menu hamburger -->
+  <header class="bg-gray-800 p-4 flex justify-between items-center">
+    <h1 class="text-3xl font-bold text-white">Clash Stats</h1>
+    <!-- Menu Desktop -->
+    <nav class="hidden md:block">
+      <ul class="flex space-x-4">
+        <li>
+          <a href="/seasonResults" class="text-white hover:text-yellow-500">Season</a>
+        </li>
+        <li>
+          <a href="/weeklyHistory" class="text-white hover:text-yellow-500">Weekly History</a>
+        </li>
+      </ul>
+    </nav>
+    <!-- Botão Hamburger para Mobile -->
+    <div class="md:hidden">
+      <button id="menuBtn">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+  <!-- Menu Mobile (oculto por padrão) -->
+  <div id="mobileMenu" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 hidden">
+    <div class="p-4">
+      <button id="closeMenu" class="mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      <nav>
+        <ul class="space-y-4">
+          <li>
+            <a href="/seasonResults" class="text-white text-2xl" onclick="toggleMobileMenu()">Season</a>
+          </li>
+          <li>
+            <a href="/weeklyHistory" class="text-white text-2xl" onclick="toggleMobileMenu()">Weekly History</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+  <script>
+    const menuBtn = document.getElementById('menuBtn');
+    const closeMenu = document.getElementById('closeMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    
+    closeMenu.addEventListener('click', () => {
+      mobileMenu.classList.add('hidden');
+    });
+    
+    function toggleMobileMenu(){
+      mobileMenu.classList.add('hidden');
+    }
+  </script>
+
+  <!-- Conteúdo da página Season Results -->
+  <div class="max-w-4xl mx-auto p-6">
+    <% if (seasonHistory && seasonHistory.length > 0) { %>
+      <% seasonHistory.forEach(function(season) { %>
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md mb-6">
+          <h2 class="text-2xl font-bold mb-2">Season <%= season.seasonNumber %></h2>
+          <p class="mb-2">
+            <span class="font-semibold">Total doado:</span>
+            <%= Number(season.totalDonated).toLocaleString('pt-BR') %>
+          </p>
+          <p class="mb-2">
+            <span class="font-semibold">Média Semanal:</span>
+            <%= season.weeklyAverage %>
+          </p>
+          <div class="mb-2">
+            <h3 class="font-semibold">Top 3 Doadores:</h3>
+            <ol class="list-decimal list-inside">
+              <% season.top3.forEach(function(member) { %>
+                <li>
+                  <%= member.name %> - <%= Number(member.donation).toLocaleString('pt-BR') %>
+                </li>
+              <% }) %>
+            </ol>
+          </div>
+          <% if (season.weeklyBreakdown && season.weeklyBreakdown.length > 0) { %>
+            <div>
+              <h3 class="font-semibold">Breakdown Semanal:</h3>
+              <ul class="list-disc list-inside">
+                <% season.weeklyBreakdown.forEach(function(week) { %>
+                  <li>
+                    Semana <%= week.weekNumber %>: <%= week.totalDonations %> doações em <%= new Date(week.date).toLocaleString('pt-BR') %>
+                  </li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } %>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <p class="text-lg text-center">Nenhuma season concluída ainda.</p>
+    <% } %>
+  </div>
+</body>
+</html>

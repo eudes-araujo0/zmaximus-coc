@@ -19,10 +19,9 @@ function loadPersistedData() {
       seasonData: {
         endTime: Date.now() + (9 * 24 * 60 * 60 * 1000) + (13 * 60 * 60 * 1000), // 9d13h
         members: [],
-        weeklyDonations: {}  // Usado como objeto para armazenar as doações semanais por chave (tag ou nome)
+        weeklyDonations: {}
       },
       seasonHistory: [],
-      // ADIÇÃO: histórico de doações por semana
       weeklyHistory: []
     };
     fs.writeFileSync(dataFilePath, JSON.stringify(defaultData, null, 2));
@@ -34,50 +33,98 @@ function savePersistedData(data) {
   fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
 }
 
-// Carrega os dados persistidos (ou cria se não existirem)
+// Carrega os dados persistidos
 let persistedData = loadPersistedData();
 let seasonData = persistedData.seasonData;
 let seasonHistory = persistedData.seasonHistory;
-// ADIÇÃO: referência ao array de histórico semanal
 let weeklyHistory = persistedData.weeklyHistory || [];
 
-// Configuração do EJS como engine de templates
+// Configuração do EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middlewares para processar JSON e formulários
+// Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// API Key e URL base do Clash of Clans
+// API Key e URL base
 const KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjhiNGFjYmM2LWQ1MDgtNGM5Yy1iODFjLTQzZTg1MjBhMDJlOCIsImlhdCI6MTczOTYzNjk0NSwic3ViIjoiZGV2ZWxvcGVyL2UyYzE5ZTJjLTM2OGQtYmJjOC1hOTY4LTdjYzZjZjMwNjY2MCIsInNjb3BlcyI6WyJjbGFzaCJdLCJsaW1pdHMiOlt7InRpZXIiOiJkZXZlbG9wZXIvc2lsdmVyIiwidHlwZSI6InRocm90dGxpbmcifSx7ImNpZHJzIjpbIjM0LjIxMy4yMTQuNTUiLCIxODYuMjMzLjE2OC41OCJdLCJ0eXBlIjoiY2xpZW50In1dfQ.yljOGKXjBdk6EjL8jlJfHntj3Q6VsvjyZEw1eGu3zMljoHEiC6uYVNHvR9HxRwsPTkh8A5rwvu_4C9k4TJCb_A";
+
 const BASE_URL = "https://api.clashofclans.com/v1/clans/";
 
-// Rota para exibir a página inicial
-app.get('/', (req, res) => {
-  res.render('index', { data: null, error: null, members: [], totalDonations: 0, seasonEnd: seasonData.endTime });
+// Rota GET: Página inicial
+app.get('/', async (req, res) => {
+  // Busca o clã whitelisted para exibir o badge no card menor
+  const allowedTag = "#899VUPLL";
+  const encodedTag = allowedTag.replace("#", "%23");
+  let featuredData = null;
+
+  try {
+    const clanUrl = BASE_URL + encodedTag;
+    const response = await fetch(clanUrl, {
+      headers: {
+        "Accept": "application/json",
+        "Authorization": `Bearer ${KEY}`
+      }
+    });
+    if (response.ok) {
+      featuredData = await response.json();
+    }
+  } catch (err) {
+    console.error("Erro ao buscar dados do clã whitelisted:", err);
+  }
+
+  // Na tela inicial: card menor sim (showFeaturedCard = true), card maior não (showBigCard = false).
+  res.render('index', {
+    data: featuredData,   // Usado para exibir o badge no card menor
+    showBigCard: false,   // Card maior oculto na página inicial
+    showFeaturedCard: true,
+    error: null,
+    members: [],
+    totalDonations: 0,
+    seasonEnd: seasonData.endTime,
+    weeklyHistory: persistedData.weeklyHistory
+  });
 });
 
-// Rota para buscar dados do clã
+// Rota POST: Pesquisa/clique no card
 app.post('/', async (req, res) => {
   let { clan_tag } = req.body;
+  clan_tag = clan_tag.trim();
   let data = null;
   let error = null;
   let members = [];
   let totalDonations = 0;
-  seasonEnd = seasonData.endTime;
-  weeklyHistory: persistedData.weeklyHistory;
+  let showBigCard = false;        // Por padrão, oculto
+  let showFeaturedCard = false;   // Ao pesquisar/clique, sumimos com o card menor
 
   if (clan_tag) {
     if (!clan_tag.startsWith("#")) {
       clan_tag = "#" + clan_tag;
     }
+
+    // WHITELIST: somente #899VUPLL
+    const allowedTag = "#899VUPLL";
+    if (clan_tag.toUpperCase() !== allowedTag.toUpperCase()) {
+      error = "❌ Este clã não está na whitelist! Entre em contato no <a href='https://instagram.com/eudes.jr1' target='_blank' class='text-blue-500 underline'>Instagram</a> ou <a href='https://wa.me/5582991588035' target='_blank' class='text-green-500 underline'>WhatsApp</a> para adquirir a whitelist ou um site personalizado.";
+      return res.render('index', {
+        data: null,
+        error,
+        members,
+        totalDonations,
+        seasonEnd: seasonData.endTime,
+        weeklyHistory: persistedData.weeklyHistory,
+        showBigCard,       // false
+        showFeaturedCard   // false
+      });
+    }
+
+    // Se for #899VUPLL, buscamos o clã e exibimos o card maior
     const encoded_tag = clan_tag.replace("#", "%23");
     const clanUrl = BASE_URL + encoded_tag;
 
     try {
-      // Busca os dados do clã
       const response = await fetch(clanUrl, {
         headers: {
           "Accept": "application/json",
@@ -87,8 +134,10 @@ app.post('/', async (req, res) => {
 
       if (response.ok) {
         data = await response.json();
+        // Ativamos a flag para exibir o card maior
+        showBigCard = true;
 
-        // Busca a lista de membros do clã
+        // Busca lista de membros
         const membersUrl = BASE_URL + encoded_tag + '/members';
         const membersResponse = await fetch(membersUrl, {
           headers: {
@@ -102,10 +151,9 @@ app.post('/', async (req, res) => {
           members = membersJson.items || [];
 
           if (members.length > 0) {
-            totalDonations = members.reduce((acc, member) => acc + member.donations, 0);
+            totalDonations = members.reduce((acc, m) => acc + m.donations, 0);
             seasonData.members = members.map(m => ({ name: m.name, donation: m.donations }));
 
-            // Atualiza a estrutura de weeklyDonations
             if (!seasonData.weeklyDonations) {
               seasonData.weeklyDonations = {};
             }
@@ -126,7 +174,6 @@ app.post('/', async (req, res) => {
               }
             });
 
-            // Mapeia os membros para incluir a propriedade "weeklyDonation"
             members = members.map(m => {
               const key = m.tag || m.name;
               const weekly = seasonData.weeklyDonations[key] ? seasonData.weeklyDonations[key].weeklyDonations : 0;
@@ -144,46 +191,48 @@ app.post('/', async (req, res) => {
     error = "Por favor, insira a tag do clã.";
   }
 
-  // Salva os dados persistidos (seasonData e seasonHistory) em data.json
+  // Salvamos os dados
   persistedData.seasonData = seasonData;
   persistedData.seasonHistory = seasonHistory;
-  // ADIÇÃO: também salvamos weeklyHistory, caso tenha sido alterado
   persistedData.weeklyHistory = weeklyHistory;
   savePersistedData(persistedData);
 
-  res.render('index', { data, error, members, totalDonations, seasonEnd, weeklyHistory: persistedData.weeklyHistory });
+  // Renderizamos com showBigCard = true se achamos o clã, false se deu erro
+  res.render('index', {
+    data,
+    error,
+    members,
+    totalDonations,
+    seasonEnd: seasonData.endTime,
+    weeklyHistory: persistedData.weeklyHistory,
+    showBigCard,
+    showFeaturedCard
+  });
 });
 
-// Rota para resetar as doações semanais (pode ser chamada manualmente ou via cron)
+// Rota para resetar as doações semanais
 app.get('/resetWeekly', (req, res) => {
-  // ADIÇÃO: antes de zerar, somamos todas as doações semanais para guardar o histórico
   const totalWeeklyDonations = Object.values(seasonData.weeklyDonations || {}).reduce(
-    (acc, member) => acc + member.weeklyDonations,
+    (acc, m) => acc + m.weeklyDonations,
     0
   );
 
-  // Se não existir, inicializa
   if (!persistedData.weeklyHistory) {
     persistedData.weeklyHistory = [];
   }
-
-  // Descobre qual é a próxima "semana" (ou reset) contando o length
   const weekNumber = persistedData.weeklyHistory.length + 1;
 
-  // Salva no histórico semanal
   persistedData.weeklyHistory.push({
     weekNumber,
     totalDonations: totalWeeklyDonations,
     date: new Date().toISOString()
   });
 
-  // Agora zera as doações
   Object.keys(seasonData.weeklyDonations || {}).forEach(key => {
     seasonData.weeklyDonations[key].weeklyDonations = 0;
   });
   console.log("✅ Doações semanais resetadas!");
 
-  // Salva os dados atualizados
   persistedData.seasonData = seasonData;
   persistedData.weeklyHistory = persistedData.weeklyHistory;
   savePersistedData(persistedData);
@@ -191,13 +240,12 @@ app.get('/resetWeekly', (req, res) => {
   res.json({ success: true, message: "Doações semanais resetadas!" });
 });
 
+// Rota para exibir weeklyHistory
 app.get('/weeklyHistory', (req, res) => {
-    // Renderiza uma nova view "weeklyHistory.ejs"
-    // passando a lista de semanas com doações
-    res.render('weeklyHistory', {
-      weeklyHistory: persistedData.weeklyHistory || []
-    });
+  res.render('weeklyHistory', {
+    weeklyHistory: persistedData.weeklyHistory || []
   });
+});
 
 // Rota para resetar a season automaticamente
 app.get('/resetSeason', (req, res) => {
@@ -206,17 +254,14 @@ app.get('/resetSeason', (req, res) => {
   if (now >= seasonData.endTime) {
     console.log("⏳ Resetando a season automaticamente...");
 
-    // Calculando os dados da temporada finalizada
     const sortedMembers = [...seasonData.members].sort((a, b) => b.donation - a.donation);
     const top3 = sortedMembers.slice(0, 3);
-    const totalDonated = sortedMembers.reduce((acc, member) => acc + member.donation, 0);
-    const weeklyAverage = totalDonated / (9 / 7); // Aproximando 9 dias como 1.28 semanas
+    const totalDonated = sortedMembers.reduce((acc, m) => acc + m.donation, 0);
+    const weeklyAverage = totalDonated / (9 / 7); // 9 dias ~ 1.28 semanas
 
-    // ADIÇÃO: Pega todas as semanas desta temporada e anexa no histórico
     const seasonNumber = seasonHistory.length + 1;
     const weeklyDataThisSeason = persistedData.weeklyHistory || [];
 
-    // Armazenando os resultados da season + o breakdown semanal
     seasonHistory.push({
       seasonNumber,
       top3,
@@ -225,17 +270,12 @@ app.get('/resetSeason', (req, res) => {
       weeklyBreakdown: weeklyDataThisSeason
     });
 
-    // Limpa o histórico semanal para a próxima temporada
     persistedData.weeklyHistory = [];
-
-    // Resetando os dados da season
     seasonData.members.forEach(member => member.donation = 0);
     console.log("✅ Temporada resetada!");
 
-    // Salva os dados atualizados
     persistedData.seasonData = seasonData;
     persistedData.seasonHistory = seasonHistory;
-    // ADIÇÃO: zera o weeklyHistory para a próxima season
     weeklyHistory = [];
     savePersistedData(persistedData);
 
@@ -245,7 +285,6 @@ app.get('/resetSeason', (req, res) => {
   }
 });
 
-// Rota para exibir os resultados das seasons anteriores
 app.get('/seasonResults', (req, res) => {
   res.render('seasonResults', { seasonHistory });
 });
@@ -253,25 +292,20 @@ app.get('/seasonResults', (req, res) => {
 // Rota para configurar manualmente o tempo da season
 app.post('/setSeasonTime', (req, res) => {
   const { endTime } = req.body;
-
   if (endTime) {
     seasonData.endTime = new Date(endTime).getTime();
-
-    // Salva os dados atualizados
     persistedData.seasonData = seasonData;
     savePersistedData(persistedData);
-
     res.json({ success: true, message: `Novo tempo de season definido para ${new Date(seasonData.endTime).toLocaleString()}` });
   } else {
     res.json({ success: false, message: "Forneça um tempo válido para a season." });
   }
 });
 
-// Agendamento: Zerando as doações semanais a partir de amanhã às 00:10 e, depois, toda segunda-feira às 00:10
+// Agendamento para resetar as doações semanais
 function resetWeeklyDonations() {
-  // Mesmo comportamento do /resetWeekly:
   const totalWeeklyDonations = Object.values(seasonData.weeklyDonations || {}).reduce(
-    (acc, member) => acc + member.weeklyDonations,
+    (acc, m) => acc + m.weeklyDonations,
     0
   );
 
@@ -300,7 +334,6 @@ const delay = amanha.getTime() - agora.getTime();
 
 setTimeout(() => {
   resetWeeklyDonations();
-  // Agenda resets recorrentes: toda segunda-feira às 00:10
   cron.schedule('10 0 * * 1', () => {
     resetWeeklyDonations();
   });

@@ -18,19 +18,17 @@
       background: url('https://wallpapercave.com/wp/wp2757875.jpg') no-repeat center center fixed;
       background-size: cover;
     }
-
     @media (max-width: 768px) {  
       .hide-on-mobile {  
-       display: none;  
+        display: none;  
       }
     }
-
     /* Tamanho fixo para o "badge" de XP */
     .level-badge {
       position: relative;
-      width: 40px;   /* Ajuste conforme necessário */
-      height: 40px;  /* Ajuste conforme necessário */
-      flex-shrink: 0; /* Impede que o badge seja comprimido em telas menores */
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
     }
     .level-badge img {
       width: 100%;
@@ -44,233 +42,307 @@
       transform: translate(-50%, -50%);
       color: #fff;
       font-weight: bold;
-      font-size: 14px;      /* Tamanho fixo para não variar */
-      line-height: 14px;    /* Mantém altura consistente mesmo com 2 ou 3 dígitos */
-      white-space: nowrap;  /* Evita quebra de linha dentro do badge */
+      font-size: 14px;
+      line-height: 14px;
+      white-space: nowrap;
       pointer-events: none;
       text-shadow: 0 0 2px rgba(0,0,0,0.8);
     }
   </style>
 </head>
-
-<header class="bg-gray-800 p-4 mb-4 flex justify-between items-center">
-  <h1 class="text-3xl font-bold text-white">Clash Stats</h1>
-  <nav>
-    <ul class="flex space-x-4">
-      <li>
-        <a href="/seasonResults" class="text-white hover:text-yellow-500">Season</a>
-      </li>
-      <li>
-        <a href="/weeklyHistory" class="text-white hover:text-yellow-500">Weekly History</a>
-      </li>
-    </ul>
-  </nav>
-</header>
-
-<body class="bg-gray-900 bg-opacity-90 text-gray-100">
-  <div class="max-w-4xl mx-auto">
-    <div class="bg-gray-800 bg-opacity-95 p-4 rounded-lg shadow-lg">
-      <!-- Cabeçalho -->
-      <h1 class="text-4xl font-extrabold text-center mb-8 border-b pb-4">
-        Consulta de Clã (BETA) - Clash of Clans
-        <h6 class="text-center mb-2">Desenvolvido por: © Eudes Júnior</h6>
-      </h1>
-
-      <!-- Formulário de Busca pelo Clã -->
-      <form action="/" method="post" class="mb-8">
-        <label for="clan_tag" class="block mb-2 text-xl font-medium">
-          Tag do Clã (ex: PG2V0RGR):
-        </label>
-        <div class="flex flex-col md:flex-row">
-          <input
-            type="text"
-            id="clan_tag"
-            name="clan_tag"
-            placeholder="PG2V0RGR"
-            required
-            class="flex-1 p-4 border border-gray-600 rounded-t-lg md:rounded-l-lg md:rounded-tr-none bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-          >
-          <button type="submit" class="bg-yellow-600 text-gray-900 px-6 py-4 rounded-b-lg md:rounded-r-lg md:rounded-bl-none hover:bg-yellow-500 transition-colors duration-300">
-            Buscar
-          </button>
-        </div>
-      </form>
-
-      <!-- Mensagem de Erro -->
-      <% if (error) { %>
-        <p class="text-red-500 font-semibold mb-6"><%= error %></p>
-      <% } %>
-
-      <!-- Card do Clã -->
-      <% if (data) { %>
-        <div class="clan-info bg-gray-700 p-6 rounded-lg shadow-md mb-8">
-          <div class="flex flex-col md:flex-row items-center">
-            <img
-              src="<%= data.badgeUrls.large %>"
-              alt="Banner do Clã"
-              class="w-32 h-32 md:w-48 md:h-48 object-contain mx-auto"
-            >
-            <div class="mt-4 md:mt-0 md:ml-8 text-center md:text-left">
-              <h2 class="text-3xl font-bold"><%= data.name %></h2>
-              <p class="mt-2 text-gray-300"><%= data.description %></p>
-              <p class="mt-2">Nível: <span class="font-semibold"><%= data.clanLevel %></span></p>
-            </div>
-          </div>
-        </div>
-      <% } %>
-
-      <div class="text-center mb-8 flex flex-col items-center">
-        <h3 class="text-2xl font-bold text-gray-100 uppercase tracking-wide mb-4">⚡ Contagem para o fim da temporada! ⚡</h3>
-        <div class="relative inline-block bg-gray-900 p-2 rounded-xl shadow-lg border border-gray-700">
-          <!-- Efeito de brilho externo -->
-          <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 blur-lg opacity-50 rounded-xl"></div>
-          
-          <div class="relative flex items-center justify-center">
-            <div class="p-8 rounded-xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-400 shadow-2xl border-4 border-yellow-300 animate-pulse">
-              <p id="countdown" class="text-4xl font-extrabold text-white tracking-wide drop-shadow-lg">
-                <!-- O contador será atualizado aqui -->
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <% function traduzCargo(role) { 
-        switch(role) {
-          case 'leader': return 'Líder';
-          case 'coLeader': return 'Co-líder';
-          case 'admin': return 'Ancião';
-          case 'member': return 'Membro';
-          default: return role; // Retorna o original caso apareça algo diferente
-        }
-      }
-   %>
-
-      <!-- Card de Membros e Resumo de Doações -->
-      <% if (members && members.length > 0) { 
-            // Cálculos para o resumo de doações
-            let maxDonation = 0;
-            let minDonation = Infinity;
-            let sumDonation = 0;
-            let sumDonationSinceReset = 0;
-            let biggestDonorName = "";
-            members.forEach(member => {
-              const donationValue = Number(member.donations) || 0;
-              const donationSinceReset = Number(member.donationsSinceLastReset) || 0;
-              sumDonation += donationValue;
-              sumDonationSinceReset += donationSinceReset;
-              if (donationValue > maxDonation) {
-                maxDonation = donationValue;
-                biggestDonorName = member.name;
-              }
-              if (donationValue < minDonation) {
-                minDonation = donationValue;
-              }
-            });
-            let avgDonation = sumDonation / members.length;
-      %>
-      <div class="members-info p-4 rounded-b-lg bg-gray-800">
-        <!-- Card Resumo de Doações -->
-        <div class="summary-card bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 text-gray-900 p-6 rounded-xl shadow-2xl mb-6 relative overflow-hidden">
-          <h3 class="text-3xl font-extrabold mb-6 text-center uppercase text-white drop-shadow-lg">🏆 Resumo de Doações 🏆</h3>
-          
-          <ul class="space-y-3 text-lg text-white">
-            <li class="flex justify-between border-b border-orange-300 pb-2">
-              <span class="font-bold">🔥 Total doado pelo clã:</span>
-              <span><%= Number(sumDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
-            </li>
-            
-            <li class="flex justify-between border-b border-orange-300 pb-2 bg-yellow-500 text-gray-900 font-extrabold p-3 rounded-lg shadow-md animate-pulse">
-              <span class="font-bold">🏆 Top doador:</span>
-              <span><%= biggestDonorName %> (<%= Number(maxDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>)</span>
-            </li>
-            
-            <li class="flex justify-between border-b border-t border-orange-300 pb-2 text-white font-semibold">
-              <span class="font-bold">📊 Média de doações do Clã:</span>
-              <span><%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
-            </li>
-          </ul>
-        </div>
-          <!-- Campo de busca para jogadores, centralizado -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between text-center mb-6 relative">
-  <div class="relative inline-block w-full md:w-auto max-w-md">
-    <input
-      type="text"
-      id="playerSearch"
-      placeholder="🔎 Buscar jogador"
-      class="w-full p-4 border-2 border-gray-500 rounded-xl transition-all duration-500 bg-gray-800 text-white text-lg shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-400"
-      oninput="showClearButton()"
-    >
-    <!-- Botão de limpar input -->
-    <button 
-      id="clearSearch" 
-      class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-all hidden"
-      onclick="clearSearchField()"
-    >
-      ✖
-    </button>
-  </div>
-
-   <!-- NOVO CARD: Botão que abre o modal da média semanal -->
-   <div class="mt-2 md:mt-0 md:mx-4">
-    <div 
-      class="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-500" 
-      onclick="openAverageModal()"
-    >
-      Média Semanal
-    </div>
-  </div>
-
-  <!-- MODAL para exibir a média semanal do clã -->
-  <div id="averageModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden">
-    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 text-center">
-      <h2 class="text-2xl font-bold mb-4">Média Semanal do Clã</h2>
-      
-      <!-- Média atual -->
-      <p id="modalAverageDonation" class="text-lg mb-4">
-        <%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
-      </p>
-  
-      <!-- Histórico Semanal -->
-      <% if (weeklyHistory && weeklyHistory.length > 0) { %>
-        <div class="text-left bg-gray-700 p-4 rounded-md mb-4">
-          <h3 class="font-bold mb-2">Histórico de Resets:</h3>
-          <ul class="space-y-1">
-            <% weeklyHistory.forEach(item => { %>
-              <li>
-                <span class="font-semibold">Semana <%= item.weekNumber %>:</span>
-                <%= item.totalDonations %> doações
-              </li>
-            <% }) %>
-          </ul>
-        </div>
-      <% } else { %>
-        <p class="text-sm text-gray-400 mb-4">Nenhum histórico semanal registrado ainda.</p>
-      <% } %>
-  
-      <!-- Botão Fechar -->
-      <button 
-        onclick="closeAverageModal()" 
-        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500"
-      >
-        Fechar
+<body class="bg-gray-900 bg-opacity-90 text-gray-100 flex flex-col min-h-screen">
+  <!-- Header com navegação e menu hamburger -->
+  <header class="bg-gray-800 p-4 mb-8 flex justify-between items-center">
+    <h1 class="text-3xl font-bold text-white">Consulta de Clã (BETA) - Clash of Clans</h1>
+    <!-- Menu Desktop -->
+    <nav class="hidden md:block">
+      <ul class="flex space-x-4">
+        <li>
+          <a href="/seasonResults" class="text-white hover:text-yellow-500">Season</a>
+        </li>
+        <li>
+          <a href="/weeklyHistory" class="text-white hover:text-yellow-500">Weekly History</a>
+        </li>
+      </ul>
+    </nav>
+    <!-- Botão Hamburger para Mobile -->
+    <div class="md:hidden">
+      <button id="menuBtn">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
       </button>
     </div>
+  </header>
+  <!-- Menu Mobile (oculto por padrão) -->
+  <div id="mobileMenu" class="fixed inset-0 bg-gray-900 bg-opacity-95 z-50 hidden">
+    <div class="p-4">
+      <button id="closeMenu" class="mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      <nav>
+        <ul class="space-y-4">
+          <li>
+            <a href="/seasonResults" class="text-white text-2xl" onclick="toggleMobileMenu()">Season</a>
+          </li>
+          <li>
+            <a href="/weeklyHistory" class="text-white text-2xl" onclick="toggleMobileMenu()">Weekly History</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </div>
+  <script>
+    const menuBtn = document.getElementById('menuBtn');
+    const closeMenu = document.getElementById('closeMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    
+    closeMenu.addEventListener('click', () => {
+      mobileMenu.classList.add('hidden');
+    });
+    
+    function toggleMobileMenu(){
+      mobileMenu.classList.add('hidden');
+    }
+  </script>
 
-  <div class="flex items-center mt-2 md:mt-0 md:ml-4">
-    <label for="sortOrder" class="mr-2 text-white font-semibold">📊 Ordenar:</label>
-    <select id="sortOrder" class="p-3 border-2 border-gray-500 rounded-lg bg-gray-800 text-white shadow-md transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500 hover:bg-gray-700 appearance-none cursor-pointer">
-      <option value="desc">⬇️ Maior para Menor</option>
-      <option value="asc">⬆️ Menor para Maior</option>
-    </select>
-  </div>
-</div>
+  <!-- Main Content -->
+  <main class="flex-grow">
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-gray-800 bg-opacity-95 p-4 rounded-lg shadow-lg">
+        
+        <!-- Formulário de Busca pelo Clã -->
+        <form action="/" method="post" class="mb-8">
+          <label for="clan_tag" class="block mb-2 text-xl font-medium">
+            Tag do Clã (ex: PG2V0RGR):
+          </label>
+          <div class="flex flex-col md:flex-row">
+            <input
+              type="text"
+              id="clan_tag"
+              name="clan_tag"
+              placeholder="PG2V0RGR"
+              required
+              class="flex-1 p-4 border border-gray-600 rounded-t-lg md:rounded-l-lg md:rounded-tr-none bg-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+            <button type="submit" class="bg-yellow-600 text-gray-900 px-6 py-4 rounded-b-lg md:rounded-r-lg md:rounded-bl-none hover:bg-yellow-500 transition-colors duration-300">
+              Buscar
+            </button>
+          </div>
+          <% if (error) { %>
+            <p class="text-red-500 font-semibold mb-6"><%- error %></p>
+          <% } %>
+        </form>
 
-  
+        <!-- Lê as flags passadas pelo servidor (caso não venham, define valores padrão) -->
+        <% var showBigCard = typeof showBigCard !== 'undefined' ? showBigCard : false; %>
+        <% var showFeaturedCard = typeof showFeaturedCard !== 'undefined' ? showFeaturedCard : true; %>
+
+        <!-- Card do Clã (MAIOR) - só exibe se data && showBigCard forem true -->
+        <% if (data && showBigCard) { %>
+          <div class="clan-info bg-gray-700 p-6 rounded-lg shadow-md mb-8">
+            <div class="flex flex-col md:flex-row items-center">
+              <img
+                src="<%= data.badgeUrls.large %>"
+                alt="Banner do Clã"
+                class="w-32 h-32 md:w-48 md:h-48 object-contain mx-auto"
+              >
+              <div class="mt-4 md:mt-0 md:ml-8 text-center md:text-left">
+                <h2 class="text-3xl font-bold"><%= data.name %></h2>
+                <p class="mt-2 text-gray-300"><%= data.description %></p>
+                <p class="mt-2">Nível: <span class="font-semibold"><%= data.clanLevel %></span></p>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- Contagem para o fim da temporada -->
+        <div class="text-center mb-8 flex flex-col items-center">
+          <h3 class="text-2xl font-bold text-gray-100 uppercase tracking-wide mb-4">⚡ Contagem para o fim da temporada! ⚡</h3>
+          <div class="relative inline-block bg-gray-900 p-2 rounded-xl shadow-lg border border-gray-700">
+            <!-- Efeito de brilho externo -->
+            <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 blur-lg opacity-50 rounded-xl"></div>
+            <div class="relative flex items-center justify-center">
+              <div class="p-8 rounded-xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-400 shadow-2xl border-4 border-yellow-300 animate-pulse">
+                <p id="countdown" class="text-4xl font-extrabold text-white tracking-wide drop-shadow-lg">
+                  <!-- O contador será atualizado aqui -->
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Menor: CLÃ COM WHITELIST ADQUIRIDA -->
+        <% if (showFeaturedCard) { %>
+          <div class="mt-8">
+            <div class="max-w-sm mx-auto">
+              <div 
+                class="bg-gradient-to-r from-purple-800 via-purple-600 to-purple-500 text-white rounded-2xl shadow-2xl cursor-pointer transition transform hover:scale-105 hover:shadow-3xl duration-300"
+                onclick="document.getElementById('whitelistClanForm').submit()"
+              >
+                <div class="p-6 border-b border-purple-400 text-center">
+                  <h2 class="text-2xl font-extrabold uppercase tracking-wide">CLÄ COM WHITELIST ADQUIRIDA</h2>
+                  <p class="mt-1 text-sm italic">Acesse os stats exclusivos</p>
+                </div>
+                <div class="flex items-center justify-center p-6">
+                  <% if (data && data.badgeUrls) { %>
+                    <img 
+                      src="<%= data.badgeUrls.large %>"
+                      alt="Badge do Clã"
+                      class="w-20 h-20 rounded-full border-4 border-white"
+                    >
+                  <% } else { %>
+                    <img 
+                      src="https://via.placeholder.com/80" 
+                      alt="Badge do Clã"
+                      class="w-20 h-20 rounded-full border-4 border-white"
+                    >
+                  <% } %>
+                  <div class="ml-4 text-left">
+                    <h3 class="text-xl font-bold"><%= data ? data.name : 'TROPAS 0800' %></h3>
+                    <p class="text-sm font-semibold"><%= data ? data.tag : '#899VUPLL' %></p>
+                  </div>
+                </div>
+              </div>
+              <!-- Formulário oculto para enviar a tag via POST -->
+              <form id="whitelistClanForm" action="/" method="POST" style="display: none;">
+                <input type="hidden" name="clan_tag" value="899VUPLL">
+              </form>
+            </div>
+          </div>
+        <% } %>
+
+        <% function traduzCargo(role) { 
+          switch(role) {
+            case 'leader': return 'Líder';
+            case 'coLeader': return 'Co-líder';
+            case 'admin': return 'Ancião';
+            case 'member': return 'Membro';
+            default: return role;
+          }
+        } %>
+
+        <!-- Card de Membros e Resumo de Doações -->
+        <% if (members && members.length > 0) { 
+              // Cálculos para o resumo de doações
+              let maxDonation = 0;
+              let minDonation = Infinity;
+              let sumDonation = 0;
+              let sumDonationSinceReset = 0;
+              let biggestDonorName = "";
+              members.forEach(member => {
+                const donationValue = Number(member.donations) || 0;
+                const donationSinceReset = Number(member.donationsSinceLastReset) || 0;
+                sumDonation += donationValue;
+                sumDonationSinceReset += donationSinceReset;
+                if (donationValue > maxDonation) {
+                  maxDonation = donationValue;
+                  biggestDonorName = member.name;
+                }
+                if (donationValue < minDonation) {
+                  minDonation = donationValue;
+                }
+              });
+              let avgDonation = sumDonation / members.length;
+        %>
+        <div class="members-info p-4 rounded-b-lg bg-gray-800">
+          <!-- Card Resumo de Doações -->
+          <div class="summary-card bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 text-gray-900 p-6 rounded-xl shadow-2xl mb-6 relative overflow-hidden">
+            <h3 class="text-3xl font-extrabold mb-6 text-center uppercase text-white drop-shadow-lg">🏆 Resumo de Doações 🏆</h3>
+            <ul class="space-y-3 text-lg text-white">
+              <li class="flex justify-between border-b border-orange-300 pb-2">
+                <span class="font-bold">🔥 Total doado pelo clã:</span>
+                <span><%= Number(sumDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
+              </li>
+              <li class="flex justify-between border-b border-orange-300 pb-2 bg-yellow-500 text-gray-900 font-extrabold p-3 rounded-lg shadow-md animate-pulse">
+                <span class="font-bold">🏆 Top doador:</span>
+                <span><%= biggestDonorName %> (<%= Number(maxDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>)</span>
+              </li>
+              <li class="flex justify-between border-b border-t border-orange-300 pb-2 text-white font-semibold">
+                <span class="font-bold">📊 Média de doações do Clã:</span>
+                <span><%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
+              </li>
+            </ul>
+          </div>
+          <!-- Campo de busca para jogadores, centralizado -->
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between text-center mb-6 relative">
+            <div class="relative inline-block w-full md:w-auto max-w-md">
+              <input
+                type="text"
+                id="playerSearch"
+                placeholder="🔎 Buscar jogador"
+                class="w-full p-4 border-2 border-gray-500 rounded-xl transition-all duration-500 bg-gray-800 text-white text-lg shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-400"
+                oninput="showClearButton()"
+              >
+              <button 
+                id="clearSearch" 
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-all hidden"
+                onclick="clearSearchField()"
+              >
+                ✖
+              </button>
+            </div>
+            <!-- Botão que abre o modal da média semanal -->
+            <div class="mt-2 md:mt-0 md:mx-4">
+              <div 
+                class="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-500" 
+                onclick="openAverageModal()"
+              >
+                Média Semanal
+              </div>
+            </div>
+            <div class="flex items-center mt-2 md:mt-0 md:ml-4">
+              <label for="sortOrder" class="mr-2 text-white font-semibold">📊 Ordenar:</label>
+              <select id="sortOrder" class="p-3 border-2 border-gray-500 rounded-lg bg-gray-800 text-white shadow-md transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500 hover:bg-gray-700 appearance-none cursor-pointer">
+                <option value="desc">⬇️ Maior para Menor</option>
+                <option value="asc">⬆️ Menor para Maior</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="averageModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 text-center">
+              <h2 class="text-2xl font-bold mb-4">Média Semanal do Clã</h2>
+              <!-- Média atual -->
+              <p id="modalAverageDonation" class="text-lg mb-4">
+                <%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
+              </p>
+              <!-- Histórico Semanal -->
+              <% if (weeklyHistory && weeklyHistory.length > 0) { %>
+                <div class="text-left bg-gray-700 p-4 rounded-md mb-4">
+                  <h3 class="font-bold mb-2">Histórico de Resets:</h3>
+                  <ul class="space-y-1">
+                    <% weeklyHistory.forEach(item => { %>
+                      <li>
+                        <span class="font-semibold">Semana <%= item.weekNumber %>:</span>
+                        <%= item.totalDonations %> doações
+                      </li>
+                    <% }) %>
+                  </ul>
+                </div>
+              <% } else { %>
+                <p class="text-sm text-gray-400 mb-4">Nenhum histórico semanal registrado ainda.</p>
+              <% } %>
+              <!-- Botão Fechar -->
+              <button onclick="closeAverageModal()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500">
+                Fechar
+              </button>
+            </div>
+          </div>
+          
           <!-- Container para mensagem de "Jogador não encontrado!" -->
           <div id="suggestions" class="text-center text-lg font-semibold text-red-400 mt-2"></div>
-
+          
           <!-- Cabeçalho da lista de membros -->
           <div class="hidden sm:flex justify-between px-4 py-2 font-bold text-lg border-b border-gray-700 text-white">
             <span class="flex-1 text-left">Jogadores</span>
@@ -300,7 +372,6 @@
                         <img src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" alt="<%= member.league.name %>" class="inline-block w-8 h-8 mr-1 align-middle">
                       <% } %>
                       <%= member.name %>
-
                       <div class="text-sm ml-10 text-gray-400">
                         <%= traduzCargo(member.role) %>
                       </div>
@@ -321,7 +392,6 @@
                     </span>
                   </div>
                 </div>
-          
                 <!-- Layout para Mobile -->
                 <div class="flex flex-col sm:hidden">
                   <!-- Primeira Linha: Informações do Jogador e Doações Totais -->
@@ -360,45 +430,61 @@
             <% }); %>
           </ul>
         </div>
-      <% } %>
+        <% } %>
+      </div>
     </div>
-  </div>
+  </main>
 
+  <!-- Footer fixo no fim da página -->
+  <footer class="bg-gray-800 text-white mt-10 text-center py-4">
+    <p>© <%= new Date().getFullYear() %> Desenvolvido por: © Eudes Júnior</p>
+  </footer>
+
+  <!-- Modal de Doações Semanais -->
   <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden">
     <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 text-center">
       <h2 id="modalPlayerName" class="text-2xl font-bold mb-4"></h2>
       <p id="modalWeeklyDonations" class="text-lg mb-4"></p>
-      <button onclick="closeWeeklyModal()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500">Fechar</button>
+      <button onclick="closeWeeklyModal()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500">
+        Fechar
+      </button>
     </div>
   </div>
 
   <script>
-    // Pegando a variável de tempo da temporada
-    const seasonEnd = <%= seasonEnd %>; // Passando diretamente o valor para o JavaScript
+    // Variável da temporada
+    const seasonEnd = <%= seasonEnd %>;
 
     function updateCountdown() {
       const now = Date.now();
-      const remainingTime = seasonEnd - now; // Calculando o tempo restante
-
+      const remainingTime = seasonEnd - now;
       if (remainingTime <= 0) {
         document.getElementById("countdown").textContent = "Temporada finalizada!";
       } else {
-        // Calcular dias, horas, minutos e segundos restantes
         const days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
         const hours = Math.floor((remainingTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-
-        // Atualizar o contador na tela
         document.getElementById("countdown").textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
       }
     }
-
-    // Atualizar o contador de forma dinâmica a cada segundo
     setInterval(updateCountdown, 1000);
-
-    // Atualizar a primeira vez quando a página carregar
     updateCountdown();
+
+    function openWeeklyModal(name, weeklyDonation) {
+      document.getElementById('modalPlayerName').textContent = name;
+      document.getElementById('modalWeeklyDonations').textContent = weeklyDonation;
+      document.getElementById('weeklyModal').classList.remove('hidden');
+    }
+    function closeWeeklyModal() {
+      document.getElementById('weeklyModal').classList.add('hidden');
+    }
+    function openAverageModal() {
+      document.getElementById('averageModal').classList.remove('hidden');
+    }
+    function closeAverageModal() {
+      document.getElementById('averageModal').classList.add('hidden');
+    }
   </script>
 
   <!-- Seus scripts personalizados -->
