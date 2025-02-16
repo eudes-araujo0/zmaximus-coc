@@ -98,22 +98,22 @@
         </div>
       <% } %>
 
-      <div class="text-center mb-6">
-        <div class="relative inline-block">
-          <!-- Container com efeito de escudo -->
-          <div class="relative">
-            <!-- Contador com fundo laranja e animação de impacto -->
-            <p id="countdown" class="text-2xl font-extrabold text-white mt-2 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 p-6 rounded-lg shadow-xl transform transition-all duration-500 ease-in-out hover:scale-110 hover:shadow-2xl">
-              <!-- O contador vai ser exibido aqui -->
-            </p>
-            <!-- Efeito de reflexo (shine) que simula o brilho de um escudo -->
-            <div class="absolute inset-0 rounded-lg pointer-events-none opacity-0 transition-opacity duration-500 ease-in-out hover:opacity-100">
-              <div class="absolute -top-10 left-0 w-2/3 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent transform rotate-12"></div>
+      <div class="text-center mb-8 flex flex-col items-center">
+        <h3 class="text-2xl font-bold text-gray-100 uppercase tracking-wide mb-4">⚡ Contagem para o fim da temporada! ⚡</h3>
+        <div class="relative inline-block bg-gray-900 p-2 rounded-xl shadow-lg border border-gray-700">
+          <!-- Efeito de brilho externo -->
+          <div class="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600 blur-lg opacity-50 rounded-xl"></div>
+          
+          <div class="relative flex items-center justify-center">
+            <div class="p-8 rounded-xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-400 shadow-2xl border-4 border-yellow-300 animate-pulse">
+              <p id="countdown" class="text-4xl font-extrabold text-white tracking-wide drop-shadow-lg">
+                <!-- O contador será atualizado aqui -->
+              </p>
             </div>
           </div>
         </div>
-        
-        <h3 class="text-xl font-semibold mt-2 text-gray-200">Contagem para o fim da temporada!</h3>
+      </div>
+
       </div>
       
       <!-- Card de Membros e Resumo de Doações -->
@@ -139,30 +139,33 @@
             });
             let avgDonation = sumDonation / members.length;
       %>
-        <div class="members-info bg-gray-700 p-2 rounded-lg shadow-md">
-          <!-- Card Resumo de Doações -->
-          <div class="summary-card bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 text-gray-900 p-6 rounded-lg shadow-lg mb-6">
-            <h3 class="text-2xl font-bold mb-4 text-center uppercase text-white">Resumo de Doações</h3>
-            <ul class="list-disc list-inside">
-              <li>
-                <span class="font-semibold">Total doado pelo Clã:</span>
-                <%= Number(sumDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
-              </li>
-              <li>
-                <span class="font-semibold">Maior doador:</span>
-                <%= biggestDonorName %> (<%= Number(maxDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>)
-              </li>
-              <li>
-                <span class="font-semibold">Média de doações:</span>
-                <%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
-              </li>
-              <li>
-                <span class="font-semibold">Tropas doadas desde o último reset de temporada:</span>
-                <%= Number(sumDonationSinceReset).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
-              </li>
-            </ul>
-          </div>
-
+      <div class="members-info p-4 rounded-b-lg bg-gray-800">
+        <!-- Card Resumo de Doações -->
+        <div class="summary-card bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 text-gray-900 p-6 rounded-xl shadow-2xl mb-6 relative overflow-hidden">
+          <h3 class="text-3xl font-extrabold mb-6 text-center uppercase text-white drop-shadow-lg">🏆 Resumo de Doações 🏆</h3>
+          
+          <ul class="space-y-3 text-lg text-white">
+            <li class="flex justify-between border-b border-orange-300 pb-2">
+              <span class="font-bold">🔥 Total doado pelo clã:</span>
+              <span><%= Number(sumDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
+            </li>
+            
+            <li class="flex justify-between border-b border-orange-300 pb-2 bg-yellow-500 text-gray-900 font-extrabold p-3 rounded-lg shadow-md animate-pulse">
+              <span class="font-bold">🏆 Top doador:</span>
+              <span><%= biggestDonorName %> (<%= Number(maxDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>)</span>
+            </li>
+            
+            <li class="flex justify-between border-b border-orange-300 pb-2 text-white font-semibold">
+              <span class="font-bold">📊 Média de doações do Clã:</span>
+              <span><%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
+            </li>
+            
+            <li class="flex justify-between text-gray-300 font-medium">
+              <span class="font-bold">⚔️ Tropas doadas desde o último reset:</span>
+              <span><%= Number(sumDonationSinceReset).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
+            </li>
+          </ul>
+        </div>
           <!-- Título e Ordenação dos Membros -->
           <div class="flex flex-col md:flex-row justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Membros do Clã</h2>
@@ -267,6 +270,8 @@
     // Atualizar a primeira vez quando a página carregar
     updateCountdown();
   </script>
+
+  
 
   <!-- Seus scripts personalizados -->
   <script src="/js/main.js"></script>
