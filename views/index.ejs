@@ -19,6 +19,12 @@
       background-size: cover;
     }
 
+    @media (max-width: 768px) {  
+      .hide-on-mobile {  
+       display: none;  
+      }
+    }
+
     /* Tamanho fixo para o "badge" de XP */
     .level-badge {
       position: relative;
@@ -47,7 +53,7 @@
   </style>
 </head>
 <body class="bg-gray-900 bg-opacity-90 text-gray-100">
-  <div class="max-w-4xl mx-auto p-4">
+  <div class="max-w-4xl mx-auto">
     <div class="bg-gray-800 bg-opacity-95 p-4 rounded-lg shadow-lg">
       <!-- Cabeçalho -->
       <h1 class="text-4xl font-extrabold text-center mb-8 border-b pb-4">
@@ -114,8 +120,6 @@
         </div>
       </div>
 
-      </div>
-      
       <!-- Card de Membros e Resumo de Doações -->
       <% if (members && members.length > 0) { 
             // Cálculos para o resumo de doações
@@ -155,14 +159,9 @@
               <span><%= biggestDonorName %> (<%= Number(maxDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>)</span>
             </li>
             
-            <li class="flex justify-between border-b border-orange-300 pb-2 text-white font-semibold">
+            <li class="flex justify-between border-b border-t border-orange-300 pb-2 text-white font-semibold">
               <span class="font-bold">📊 Média de doações do Clã:</span>
               <span><%= Number(avgDonation).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
-            </li>
-            
-            <li class="flex justify-between text-gray-300 font-medium">
-              <span class="font-bold">⚔️ Tropas doadas desde o último reset:</span>
-              <span><%= Number(sumDonationSinceReset).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %></span>
             </li>
           </ul>
         </div>
@@ -170,75 +169,128 @@
           <div class="flex flex-col md:flex-row justify-between items-center mb-4">
             <h2 class="text-2xl font-bold">Membros do Clã</h2>
             <div class="flex items-center mt-2 md:mt-0">
-              <label for="sortOrder" class="mr-2">Ordenar:</label>
-              <select id="sortOrder" class="p-2 border border-gray-600 rounded bg-gray-800">
-                <option value="desc">Maior para Menor</option>
-                <option value="asc">Menor para Maior</option>
-              </select>
+                <label for="sortOrder" class="mr-2 text-white font-semibold">📊 Ordenar:</label>
+                <select id="sortOrder" class="p-3 border-2 border-gray-500 rounded-lg bg-gray-800 text-white shadow-md transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500 hover:bg-gray-700 appearance-none cursor-pointer">
+                  <option value="desc">⬇️ Maior para Menor</option>
+                  <option value="asc">⬆️ Menor para Maior</option>
+                </select>
             </div>
           </div>
 
           <!-- Campo de busca para jogadores, centralizado -->
-          <div class="text-center mb-4">
-            <input
-              type="text"
-              id="playerSearch"
-              placeholder="Buscar jogador pelo nick"
-              class="mx-auto p-4 border border-gray-600 rounded transition-all duration-500 bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+          <div class="text-center mb-6 relative">
+            <div class="relative inline-block w-full max-w-md">
+              <input
+                type="text"
+                id="playerSearch"
+                placeholder="🔎 Buscar jogador pelo nick..."
+                class="w-full p-4 border-2 border-gray-500 rounded-xl transition-all duration-500 bg-gray-800 text-white text-lg shadow-md focus:outline-none focus:ring-4 focus:ring-blue-500 focus:border-blue-400"
+                oninput="showClearButton()"
+              >
+              <!-- Botão de limpar input -->
+              <button 
+                id="clearSearch" 
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-all hidden"
+                onclick="clearSearchField()"
+              >
+                ✖
+              </button>
+            </div>
           </div>
           <!-- Container para mensagem de "Jogador não encontrado!" -->
-          <div id="suggestions" class="text-center text-lg font-medium mb-2"></div>
+          <div id="suggestions" class="text-center text-lg font-semibold text-red-400 mt-2"></div>
 
+          <!-- Cabeçalho da lista de membros -->
+          <div class="hidden sm:flex justify-between px-4 py-2 font-bold text-lg border-b border-gray-700 text-white">
+            <span class="flex-1 text-left">Jogadores</span>
+            <span class="flex-1 text-center">Doações Semanais</span>
+            <span class="flex-1 text-right">Doações totais</span>
+          </div>
+          <!-- Mobile Header -->
+          <div class="flex sm:hidden justify-between px-4 py-2 font-bold text-lg border-b border-gray-700 text-white">
+            <span class="flex-1 text-left">Jogadores</span>
+            <span class="flex-1 text-right">Doações totais</span>
+          </div>
+          
           <!-- Lista de Membros -->
           <ul id="membersList" class="divide-y divide-gray-600">
-            <% members.forEach(member => {
-               let isTopDonor = (member.name === biggestDonorName);
-            %>
-              <li class="py-2 flex justify-between items-center" 
-                  data-donation="<%= member.donations %>" 
-                  data-name="<%= member.name.toLowerCase() %>">
-                <!-- Ícone de nível antes do nome do jogador -->
-                <div class="inline-flex items-center space-x-2 overflow-hidden">
-                  <!-- Badge de XP -->
-                  <span class="level-badge">
-                    <img src="/images/star-badge.png" alt="Nível">
-                    <span class="level-text"><%= member.expLevel %></span>
-                  </span>
-
-                  <!-- Nome do jogador (com truncamento) -->
-                  <span
-                    class="font-medium truncate whitespace-nowrap max-w-[220px] sm:max-w-[200px] md:max-w-[250px]"
-                    title="<%= member.name %>"
-                  >
-                    <% if (member.league) { %>
-                      <img
-                        src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>"
-                        alt="<%= member.league.name %>"
-                        class="inline-block w-8 h-8 mr-1 align-middle "
-                      >
-                    <% } %>
-                    <%= member.name %>
-                  </span>
-
-                  <span class="text-yellow-400 font-bold top-doador-tag hidden mt-0 md:mt-0 md:ml-2">
-                    <span class="block md:hidden">🏆 TOP</span>
-                    <span class="hidden md:block">🏆 TOP DOADOR</span>
-                  </span>
+            <% members.forEach(function(member) { %>
+              <li class="py-2" data-name="<%= member.name.toLowerCase() %>" data-donation="<%= member.donations %>">
+                <!-- Layout para Desktop -->
+                <div class="hidden sm:flex justify-between items-center">
+                  <!-- Informações do Jogador -->
+                  <div class="flex items-center space-x-2 sm:flex-1">
+                    <span class="level-badge">
+                      <img src="/images/star-badge.png" alt="Nível">
+                      <span class="level-text"><%= member.expLevel %></span>
+                    </span>
+                    <span class="font-medium truncate whitespace-nowrap max-w-[150px] sm:max-w-[200px] md:max-w-[250px]" title="<%= member.name %>">
+                      <% if (member.league) { %>
+                        <img src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" alt="<%= member.league.name %>" class="inline-block w-8 h-8 mr-1 align-middle">
+                      <% } %>
+                      <%= member.name %>
+                    </span>
+                  </div>
+                  <!-- Doações Semanais -->
+                  <div class="flex items-center text-blue-300 font-semibold sm:flex-1 justify-center">
+                    <span></span>
+                    <span class="cursor-pointer ml-1 font-bold" onclick="openWeeklyModal('<%= member.name %>', <%= member.weeklyDonation %>)">
+                      <%= Number(member.weeklyDonation).toLocaleString('pt-BR') %>
+                    </span>
+                  </div>
+                  <!-- Doações Totais -->
+                  <div class="flex items-center sm:flex-1 justify-end">
+                    <span class="font-semibold"></span>
+                    <span class="ml-1 font-bold">
+                      <%= Number(member.donations).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
+                    </span>
+                  </div>
                 </div>
-                
-                <!-- Valor das doações com display flex e alinhado à direita (mobile) -->
-                <span class="font-semibold flex flex-col md:flex-row items-end md:items-center justify-end whitespace-nowrap text-right">
-                  <span>Doações:</span>
-                  <span class="md:ml-1">
-                    <%= Number(member.donations).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
-                  </span>
-                </span>
+          
+                <!-- Layout para Mobile -->
+                <div class="flex flex-col sm:hidden">
+                  <!-- Primeira Linha: Informações do Jogador e Doações Totais -->
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                      <span class="level-badge">
+                        <img src="/images/star-badge.png" alt="Nível">
+                        <span class="level-text"><%= member.expLevel %></span>
+                      </span>
+                      <span class="font-medium truncate whitespace-nowrap max-w-[150px]" title="<%= member.name %>">
+                        <% if (member.league) { %>
+                          <img src="<%= member.league.iconUrls.tiny || member.league.iconUrls.small %>" alt="<%= member.league.name %>" class="inline-block w-8 h-8 mr-1 align-middle">
+                        <% } %>
+                        <%= member.name %>
+                      </span>
+                    </div>
+                    <div class="flex items-center">
+                      <span class="font-semibold hide-on-mobile">Doações:</span>
+                      <span class="ml-1">
+                        <%= Number(member.donations).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) %>
+                      </span>
+                    </div>
+                  </div>
+                  <!-- Segunda Linha: Doações Semanais -->
+                  <div class="mt-1 flex justify-end items-center text-blue-300 font-semibold">
+                    <span class="font-semibold e">Semanal:</span>
+                    <span class="cursor-pointer ml-1" onclick="openWeeklyModal('<%= member.name %>', <%= member.weeklyDonation %>)">
+                      <%= Number(member.weeklyDonation).toLocaleString('pt-BR') %>
+                    </span>
+                  </div>
+                </div>
               </li>
             <% }); %>
           </ul>
         </div>
       <% } %>
+    </div>
+  </div>
+
+  <div id="weeklyModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden">
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-80 text-center">
+      <h2 id="modalPlayerName" class="text-2xl font-bold mb-4"></h2>
+      <p id="modalWeeklyDonations" class="text-lg mb-4"></p>
+      <button onclick="closeWeeklyModal()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-500">Fechar</button>
     </div>
   </div>
 
@@ -271,10 +323,9 @@
     updateCountdown();
   </script>
 
-  
-
   <!-- Seus scripts personalizados -->
   <script src="/js/main.js"></script>
   <script src="/js/sortOrder.js"></script>
+  <script src="/js/modal.js"></script>
 </body>
 </html>
