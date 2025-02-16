@@ -6,3 +6,13 @@ function openWeeklyModal(name, weekly) {
   function closeWeeklyModal() {
     document.getElementById('weeklyModal').classList.add('hidden');
   }
+
+  // modal media semanal
+
+  function openAverageModal() {
+    document.getElementById('averageModal').classList.remove('hidden');
+  }
+
+  function closeAverageModal() {
+    document.getElementById('averageModal').classList.add('hidden');
+  }

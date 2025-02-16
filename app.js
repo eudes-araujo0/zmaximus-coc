@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,7 +21,9 @@ function loadPersistedData() {
         members: [],
         weeklyDonations: {}  // Usado como objeto para armazenar as doações semanais por chave (tag ou nome)
       },
-      seasonHistory: []
+      seasonHistory: [],
+      // ADIÇÃO: histórico de doações por semana
+      weeklyHistory: []
     };
     fs.writeFileSync(dataFilePath, JSON.stringify(defaultData, null, 2));
     return defaultData;
@@ -35,6 +38,8 @@ function savePersistedData(data) {
 let persistedData = loadPersistedData();
 let seasonData = persistedData.seasonData;
 let seasonHistory = persistedData.seasonHistory;
+// ADIÇÃO: referência ao array de histórico semanal
+let weeklyHistory = persistedData.weeklyHistory || [];
 
 // Configuração do EJS como engine de templates
 app.set('view engine', 'ejs');
@@ -62,6 +67,7 @@ app.post('/', async (req, res) => {
   let members = [];
   let totalDonations = 0;
   seasonEnd = seasonData.endTime;
+  weeklyHistory: persistedData.weeklyHistory;
 
   if (clan_tag) {
     if (!clan_tag.startsWith("#")) {
@@ -108,7 +114,7 @@ app.post('/', async (req, res) => {
               const key = m.tag || m.name;
               if (!seasonData.weeklyDonations[key]) {
                 seasonData.weeklyDonations[key] = {
-                  lastKnow: m.donations,  // Você pode renomear para lastKnown se preferir
+                  lastKnow: m.donations,
                   weeklyDonations: 0
                 };
               } else {
@@ -141,13 +147,37 @@ app.post('/', async (req, res) => {
   // Salva os dados persistidos (seasonData e seasonHistory) em data.json
   persistedData.seasonData = seasonData;
   persistedData.seasonHistory = seasonHistory;
+  // ADIÇÃO: também salvamos weeklyHistory, caso tenha sido alterado
+  persistedData.weeklyHistory = weeklyHistory;
   savePersistedData(persistedData);
 
-  res.render('index', { data, error, members, totalDonations, seasonEnd });
+  res.render('index', { data, error, members, totalDonations, seasonEnd, weeklyHistory: persistedData.weeklyHistory });
 });
 
 // Rota para resetar as doações semanais (pode ser chamada manualmente ou via cron)
 app.get('/resetWeekly', (req, res) => {
+  // ADIÇÃO: antes de zerar, somamos todas as doações semanais para guardar o histórico
+  const totalWeeklyDonations = Object.values(seasonData.weeklyDonations || {}).reduce(
+    (acc, member) => acc + member.weeklyDonations,
+    0
+  );
+
+  // Se não existir, inicializa
+  if (!persistedData.weeklyHistory) {
+    persistedData.weeklyHistory = [];
+  }
+
+  // Descobre qual é a próxima "semana" (ou reset) contando o length
+  const weekNumber = persistedData.weeklyHistory.length + 1;
+
+  // Salva no histórico semanal
+  persistedData.weeklyHistory.push({
+    weekNumber,
+    totalDonations: totalWeeklyDonations,
+    date: new Date().toISOString()
+  });
+
+  // Agora zera as doações
   Object.keys(seasonData.weeklyDonations || {}).forEach(key => {
     seasonData.weeklyDonations[key].weeklyDonations = 0;
   });
@@ -155,10 +185,19 @@ app.get('/resetWeekly', (req, res) => {
 
   // Salva os dados atualizados
   persistedData.seasonData = seasonData;
+  persistedData.weeklyHistory = persistedData.weeklyHistory;
   savePersistedData(persistedData);
 
   res.json({ success: true, message: "Doações semanais resetadas!" });
 });
+
+app.get('/weeklyHistory', (req, res) => {
+    // Renderiza uma nova view "weeklyHistory.ejs"
+    // passando a lista de semanas com doações
+    res.render('weeklyHistory', {
+      weeklyHistory: persistedData.weeklyHistory || []
+    });
+  });
 
 // Rota para resetar a season automaticamente
 app.get('/resetSeason', (req, res) => {
@@ -173,13 +212,21 @@ app.get('/resetSeason', (req, res) => {
     const totalDonated = sortedMembers.reduce((acc, member) => acc + member.donation, 0);
     const weeklyAverage = totalDonated / (9 / 7); // Aproximando 9 dias como 1.28 semanas
 
-    // Armazenando os resultados
+    // ADIÇÃO: Pega todas as semanas desta temporada e anexa no histórico
+    const seasonNumber = seasonHistory.length + 1;
+    const weeklyDataThisSeason = persistedData.weeklyHistory || [];
+
+    // Armazenando os resultados da season + o breakdown semanal
     seasonHistory.push({
-      seasonNumber: seasonHistory.length + 1,
+      seasonNumber,
       top3,
       weeklyAverage: weeklyAverage.toFixed(2),
-      totalDonated
+      totalDonated,
+      weeklyBreakdown: weeklyDataThisSeason
     });
+
+    // Limpa o histórico semanal para a próxima temporada
+    persistedData.weeklyHistory = [];
 
     // Resetando os dados da season
     seasonData.members.forEach(member => member.donation = 0);
@@ -188,6 +235,8 @@ app.get('/resetSeason', (req, res) => {
     // Salva os dados atualizados
     persistedData.seasonData = seasonData;
     persistedData.seasonHistory = seasonHistory;
+    // ADIÇÃO: zera o weeklyHistory para a próxima season
+    weeklyHistory = [];
     savePersistedData(persistedData);
 
     res.json({ success: true, message: "Season resetada com sucesso!", seasonHistory });
@@ -217,6 +266,45 @@ app.post('/setSeasonTime', (req, res) => {
     res.json({ success: false, message: "Forneça um tempo válido para a season." });
   }
 });
+
+// Agendamento: Zerando as doações semanais a partir de amanhã às 00:10 e, depois, toda segunda-feira às 00:10
+function resetWeeklyDonations() {
+  // Mesmo comportamento do /resetWeekly:
+  const totalWeeklyDonations = Object.values(seasonData.weeklyDonations || {}).reduce(
+    (acc, member) => acc + member.weeklyDonations,
+    0
+  );
+
+  if (!persistedData.weeklyHistory) {
+    persistedData.weeklyHistory = [];
+  }
+  const weekNumber = persistedData.weeklyHistory.length + 1;
+  persistedData.weeklyHistory.push({
+    weekNumber,
+    totalDonations: totalWeeklyDonations,
+    date: new Date().toISOString()
+  });
+
+  Object.keys(seasonData.weeklyDonations || {}).forEach(key => {
+    seasonData.weeklyDonations[key].weeklyDonations = 0;
+  });
+  console.log("✅ Doações semanais resetadas via agendamento!");
+
+  persistedData.seasonData = seasonData;
+  savePersistedData(persistedData);
+}
+
+const agora = new Date();
+const amanha = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1, 0, 10, 0, 0);
+const delay = amanha.getTime() - agora.getTime();
+
+setTimeout(() => {
+  resetWeeklyDonations();
+  // Agenda resets recorrentes: toda segunda-feira às 00:10
+  cron.schedule('10 0 * * 1', () => {
+    resetWeeklyDonations();
+  });
+}, delay);
 
 // Iniciando o servidor
 app.listen(PORT, () => {
