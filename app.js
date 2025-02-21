@@ -50,13 +50,12 @@ app.use(express.json());
 
 // API Key e URL base
 const KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjhiNGFjYmM2LWQ1MDgtNGM5Yy1iODFjLTQzZTg1MjBhMDJlOCIsImlhdCI6MTczOTYzNjk0NSwic3ViIjoiZGV2ZWxvcGVyL2UyYzE5ZTJjLTM2OGQtYmJjOC1hOTY4LTdjYzZjZjMwNjY2MCIsInNjb3BlcyI6WyJjbGFzaCJdLCJsaW1pdHMiOlt7InRpZXIiOiJkZXZlbG9wZXIvc2lsdmVyIiwidHlwZSI6InRocm90dGxpbmcifSx7ImNpZHJzIjpbIjM0LjIxMy4yMTQuNTUiLCIxODYuMjMzLjE2OC41OCJdLCJ0eXBlIjoiY2xpZW50In1dfQ.yljOGKXjBdk6EjL8jlJfHntj3Q6VsvjyZEw1eGu3zMljoHEiC6uYVNHvR9HxRwsPTkh8A5rwvu_4C9k4TJCb_A";
-
 const BASE_URL = "https://api.clashofclans.com/v1/clans/";
 
 // Rota GET: Página inicial
 app.get('/', async (req, res) => {
   // Busca o clã whitelisted para exibir o badge no card menor
-  const allowedTag = "#899VUPLL";
+  const allowedTag = "#LY2RGCYU";
   const encodedTag = allowedTag.replace("#", "%23");
   let featuredData = null;
 
@@ -104,8 +103,8 @@ app.post('/', async (req, res) => {
       clan_tag = "#" + clan_tag;
     }
 
-    // WHITELIST: somente #899VUPLL
-    const allowedTag = "#899VUPLL";
+    // WHITELIST: somente #LY2RGCYU
+    const allowedTag = "#LY2RGCYU";
     if (clan_tag.toUpperCase() !== allowedTag.toUpperCase()) {
       error = "❌ Este clã não está na whitelist! Entre em contato no <a href='https://instagram.com/eudes.jr1' target='_blank' class='text-blue-500 underline'>Instagram</a> ou <a href='https://wa.me/5582991588035' target='_blank' class='text-green-500 underline'>WhatsApp</a> para adquirir a whitelist ou um site personalizado.";
       return res.render('index', {
@@ -115,12 +114,12 @@ app.post('/', async (req, res) => {
         totalDonations,
         seasonEnd: seasonData.endTime,
         weeklyHistory: persistedData.weeklyHistory,
-        showBigCard,       // false
-        showFeaturedCard   // false
+        showBigCard,
+        showFeaturedCard
       });
     }
 
-    // Se for #899VUPLL, buscamos o clã e exibimos o card maior
+    // Se for #LY2RGCYU, buscamos o clã e exibimos o card maior
     const encoded_tag = clan_tag.replace("#", "%23");
     const clanUrl = BASE_URL + encoded_tag;
 
@@ -158,8 +157,9 @@ app.post('/', async (req, res) => {
               seasonData.weeklyDonations = {};
             }
 
+            // Sempre usar o nome do jogador como chave
             members.forEach(m => {
-              const key = m.tag || m.name;
+              const key = m.name; 
               if (!seasonData.weeklyDonations[key]) {
                 seasonData.weeklyDonations[key] = {
                   lastKnow: m.donations,
@@ -174,8 +174,9 @@ app.post('/', async (req, res) => {
               }
             });
 
+            // Mapear as doações semanais para cada membro
             members = members.map(m => {
-              const key = m.tag || m.name;
+              const key = m.name;
               const weekly = seasonData.weeklyDonations[key] ? seasonData.weeklyDonations[key].weeklyDonations : 0;
               return { ...m, weeklyDonation: weekly };
             });
@@ -197,7 +198,6 @@ app.post('/', async (req, res) => {
   persistedData.weeklyHistory = weeklyHistory;
   savePersistedData(persistedData);
 
-  // Renderizamos com showBigCard = true se achamos o clã, false se deu erro
   res.render('index', {
     data,
     error,
@@ -210,12 +210,23 @@ app.post('/', async (req, res) => {
   });
 });
 
-// Rota para resetar as doações semanais
+// Rota para resetar as doações semanais (manual)
 app.get('/resetWeekly', (req, res) => {
-  const totalWeeklyDonations = Object.values(seasonData.weeklyDonations || {}).reduce(
+  console.log(seasonData.weeklyDonations);
+  const membersSorted = Object.entries(seasonData.weeklyDonations)
+    .sort(([, a], [, b]) => b.weeklyDonations - a.weeklyDonations)
+    .map(([key, value]) => ({ name: key, donations: value.weeklyDonations }));
+  console.log("Membros ordenados:", membersSorted);
+
+  const topDonors = membersSorted.slice(0, 3);
+  const weeklyData = seasonData.weeklyDonations || {};
+  const totalWeeklyDonations = Object.values(weeklyData).reduce(
     (acc, m) => acc + m.weeklyDonations,
     0
   );
+  const numMembers = Object.keys(weeklyData).length;
+  // Cálculo da média diária da semana (dividindo por 7)
+  const weeklyAverageDaily = totalWeeklyDonations / 7;
 
   if (!persistedData.weeklyHistory) {
     persistedData.weeklyHistory = [];
@@ -225,11 +236,14 @@ app.get('/resetWeekly', (req, res) => {
   persistedData.weeklyHistory.push({
     weekNumber,
     totalDonations: totalWeeklyDonations,
-    date: new Date().toISOString()
+    averageDonation: weeklyAverageDaily.toFixed(2),
+    date: new Date().toISOString(),
+    topDonors
   });
 
-  Object.keys(seasonData.weeklyDonations || {}).forEach(key => {
-    seasonData.weeklyDonations[key].weeklyDonations = 0;
+  // Reseta os valores semanais para cada membro
+  Object.keys(weeklyData).forEach(key => {
+    weeklyData[key].weeklyDonations = 0;
   });
   console.log("✅ Doações semanais resetadas!");
 
@@ -245,6 +259,19 @@ app.get('/weeklyHistory', (req, res) => {
   res.render('weeklyHistory', {
     weeklyHistory: persistedData.weeklyHistory || []
   });
+});
+
+app.get('/resetTestDonations', (req, res) => {
+  // Reseta os valores em seasonData.weeklyDonations para zero
+  Object.keys(seasonData.weeklyDonations).forEach(key => {
+    seasonData.weeklyDonations[key].weeklyDonations = 0;
+  });
+
+  // Opcional: resetar o weeklyHistory para reiniciar o histórico
+  persistedData.weeklyHistory = [];
+  savePersistedData(persistedData);
+  
+  res.json({ success: true, message: "Doações de teste resetadas!" });
 });
 
 // Rota para resetar a season automaticamente
@@ -302,12 +329,38 @@ app.post('/setSeasonTime', (req, res) => {
   }
 });
 
-// Agendamento para resetar as doações semanais
+app.get('/resetAll', (req, res) => {
+  // Zera as doações semanais
+  if (seasonData.weeklyDonations) {
+    Object.keys(seasonData.weeklyDonations).forEach(key => {
+      seasonData.weeklyDonations[key].weeklyDonations = 0;
+    });
+  }
+
+  // Limpa outras informações usadas na renderização:
+  seasonData.members = [];
+  persistedData.weeklyHistory = [];
+  
+  savePersistedData(persistedData);
+
+  res.json({ success: true, message: "Todas as informações foram resetadas!" });
+});
+
+// Função para resetar as doações semanais via agendamento
 function resetWeeklyDonations() {
-  const totalWeeklyDonations = Object.values(seasonData.weeklyDonations || {}).reduce(
+  const weeklyData = seasonData.weeklyDonations || {};
+  const totalWeeklyDonations = Object.values(weeklyData).reduce(
     (acc, m) => acc + m.weeklyDonations,
     0
   );
+  // Cálculo da média diária da semana
+  const weeklyAverageDaily = totalWeeklyDonations / 7;
+
+  // Calcula os 3 maiores doadores
+  const membersSorted = Object.entries(weeklyData)
+    .sort(([, a], [, b]) => b.weeklyDonations - a.weeklyDonations)
+    .map(([key, value]) => ({ name: key, donations: value.weeklyDonations }));
+  const topDonors = membersSorted.slice(0, 3);
 
   if (!persistedData.weeklyHistory) {
     persistedData.weeklyHistory = [];
@@ -316,28 +369,24 @@ function resetWeeklyDonations() {
   persistedData.weeklyHistory.push({
     weekNumber,
     totalDonations: totalWeeklyDonations,
-    date: new Date().toISOString()
+    averageDonation: weeklyAverageDaily.toFixed(2),
+    date: new Date().toISOString(),
+    topDonors
   });
 
-  Object.keys(seasonData.weeklyDonations || {}).forEach(key => {
-    seasonData.weeklyDonations[key].weeklyDonations = 0;
+  Object.keys(weeklyData).forEach(key => {
+    weeklyData[key].weeklyDonations = 0;
   });
-  console.log("✅ Doações semanais resetadas via agendamento!");
 
   persistedData.seasonData = seasonData;
   savePersistedData(persistedData);
 }
 
-const agora = new Date();
-const amanha = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1, 0, 10, 0, 0);
-const delay = amanha.getTime() - agora.getTime();
-
-setTimeout(() => {
+// Agenda o reset semanal para as 23:15 todos os dias
+cron.schedule('0 3 0 * * *', () => {
   resetWeeklyDonations();
-  cron.schedule('10 0 * * 1', () => {
-    resetWeeklyDonations();
-  });
-}, delay);
+  console.log("✅ Doações semanais resetadas via agendamento!");
+});
 
 // Iniciando o servidor
 app.listen(PORT, () => {

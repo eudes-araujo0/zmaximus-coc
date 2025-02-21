@@ -26,15 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Toggle do menu mobile
-  const menuToggle = document.getElementById('menu-toggle');
-  const mobileMenu = document.getElementById('mobile-menu');
-  if (menuToggle && mobileMenu) {
-    menuToggle.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-    });
-  }
-
   // Contagem regressiva para o término da season
   if (typeof window.seasonEnd !== 'undefined' && window.seasonEnd && window.seasonEnd !== "null") {
     const countdownEl = document.getElementById('countdown');
@@ -84,4 +75,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     });
+});
+document.addEventListener("DOMContentLoaded", function () {
+  const burger = document.getElementById("navbarBurger");
+  const menu = document.getElementById("navbarMenu");
+  const close = document.getElementById("navbarClose");
+  const backdrop = document.querySelector(".navbar-backdrop");
+
+  function openMenu() {
+    menu.classList.remove("-translate-x-full", "opacity-0");
+    menu.classList.add("translate-x-0", "opacity-100");
+    if(backdrop) {
+      backdrop.classList.remove("opacity-0");
+      backdrop.classList.add("opacity-25");
+    }
+  }
+
+  function closeMenu() {
+    menu.classList.remove("translate-x-0", "opacity-100");
+    menu.classList.add("-translate-x-full", "opacity-0");
+    if(backdrop) {
+      backdrop.classList.remove("opacity-25");
+      backdrop.classList.add("opacity-0");
+    }
+  }
+
+  if(burger) {
+    burger.addEventListener("click", openMenu);
+  }
+  if(close) {
+    close.addEventListener("click", closeMenu);
+  }
+  if(backdrop) {
+    backdrop.addEventListener("click", closeMenu);
+  }
 });
